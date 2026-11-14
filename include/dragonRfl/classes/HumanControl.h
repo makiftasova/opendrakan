@@ -72,6 +72,9 @@ namespace dragonRfl
 		std::shared_ptr<odPhysics::CharacterController> mCharacterController;
 		float mLogTimer = 0.0f;
 		bool mWasSwimming = false;
+		bool mWasUnderwater = false;
+		float mAir = 100.0f; // in percent
+		bool mDrowning = false;
 	};
 
 

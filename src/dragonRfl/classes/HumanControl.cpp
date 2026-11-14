@@ -7,6 +7,9 @@
 
 #include <dragonRfl/classes/HumanControl.h>
 
+#include <cmath>
+#include <algorithm>
+
 
 #include <dragonRfl/RflDragon.h>
 
@@ -50,6 +53,9 @@ namespace dragonRfl
     , mLastUpdatedYaw(0)
     {
     }
+
+    // looking up or down by less than this (in radians) doesn't dive or surface
+    static const float SWIM_PITCH_DEADZONE = 0.12f;
 
     HumanControl_Sv::~HumanControl_Sv()
     {
@@ -143,25 +149,50 @@ namespace dragonRfl
 
         // handle state transitions that might happen during update
         bool swimming = (mCharacterController != nullptr) && mCharacterController->isSwimming();
-        if(swimming != mWasSwimming)
+        bool underwater = swimming && mCharacterController->isUnderwater();
+        if(swimming != mWasSwimming || underwater != mWasUnderwater)
         {
-            // entered or left the water. pick the matching animation for what we are doing
+            // entered or left the water, or dived or surfaced. pick the matching animation for what we are doing
+            Logger::verbose() << "Player " << (swimming ? (underwater ? "dives" : "swims at the surface") : "stops swimming");
             mWasSwimming = swimming;
-            Logger::verbose() << "Player " << (swimming ? "starts" : "stops") << " swimming";
+            mWasUnderwater = underwater;
             _playMovementAnim();
         }
 
-        if(swimming && mCharacterController != nullptr)
+        if(mCharacterController != nullptr)
         {
-            // swimming is not driven by the animation's motion but by the speeds the class defines
-            if(mState == State::RunningForward)
+            // swimming is not driven by the animation's motion but by the speeds the class defines. the character swims where it looks,
+            //  so looking down dives and looking up surfaces
+            float verticalSpeed = 0.0f;
+            if(swimming && (mState == State::RunningForward || mState == State::RunningBackward))
             {
-                mCharacterController->moveRelative(glm::vec3(0, 0, -1)*mFields.swimForwardSpeed.get()*relTime, relTime);
-
-            }else if(mState == State::RunningBackward)
-            {
-                mCharacterController->moveRelative(glm::vec3(0, 0, -1)*mFields.swimBackwardSpeed.get()*relTime, relTime);
+                float speed = (mState == State::RunningForward) ? mFields.swimForwardSpeed.get() : mFields.swimBackwardSpeed.get();
+                float pitch = (std::fabs(mPitch) < SWIM_PITCH_DEADZONE) ? 0.0f : mPitch;
+                mCharacterController->moveRelative(glm::vec3(0, 0, -1)*speed*std::cos(pitch)*relTime, relTime);
+                verticalSpeed = speed*std::sin(pitch);
             }
+            mCharacterController->setSwimVerticalSpeed(verticalSpeed);
+
+            // air. the class defines the rates in percent per second
+            if(underwater)
+            {
+                mAir = std::max(0.0f, mAir - mFields.airConsumptionRate.get()*relTime);
+                if(mAir <= 0.0f && !mDrowning)
+                {
+                    // TODO: this should kill the player. there is no health yet, so we pull the player up instead
+                    Logger::info() << "Player ran out of air";
+                    mDrowning = true;
+                }
+
+            }else
+            {
+                mAir = std::min(100.0f, mAir + mFields.airReplenishmentRate.get()*relTime);
+                if(mDrowning && mAir > 0.0f)
+                {
+                    mDrowning = false;
+                }
+            }
+            mCharacterController->setForceSurface(mDrowning && swimming);
         }
 
         switch(swimming ? State::Idling : mState)
@@ -266,7 +297,7 @@ namespace dragonRfl
                 break;
 
             default:
-                _playSwimAnim(mFields.treadWater);
+                _playSwimAnim((mCharacterController != nullptr && mCharacterController->isUnderwater()) ? mFields.idleUnderwater : mFields.treadWater);
                 break;
             }
 

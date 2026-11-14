@@ -79,8 +79,9 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
 - Water
     - Done: terrain with water vertices (type 49) isn't solid. The character swims when the water is at least 0.3 deep.
       It floats at the surface, plays the swim animations and moves with the class's swim speeds.
-    - Missing: diving and breath (drowning), flowing water types and currents, the splash and underwater sounds,
-      and the swim-to-run transition when leaving the water.
+    - Done: diving (look down while swimming) and air. Air drains underwater and refills at the surface, using the class rates.
+    - Missing: the breath meter, drowning (the player is pulled to the surface at zero air, because there's no health yet),
+      flowing water types and currents, the splash and underwater sounds, and the swim-to-run transition when leaving the water.
     - Missing in rendering: scrolling water textures, the underwater tint and fog. Stream classes are still hidden.
     - See `doc/water_behaviour.md`.
 - AI

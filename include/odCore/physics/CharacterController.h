@@ -53,6 +53,22 @@ namespace odPhysics
 		 */
 		inline bool isSwimming() const { return mIsSwimming; }
 
+		/**
+		 * @brief True while the character's head is below the water surface.
+		 */
+		inline bool isUnderwater() const { return mIsUnderwater; }
+
+		/**
+		 * @brief Sets how fast the swimming character moves up (positive) or down (negative), in world units per second.
+		 * It can't leave the water at the top or dive through the ground.
+		 */
+		inline void setSwimVerticalSpeed(float speed) { mSwimVerticalSpeed = speed; }
+
+		/**
+		 * @brief While enabled, a swimming character rises to the surface (e.g. when it ran out of air).
+		 */
+		inline void setForceSurface(bool force) { mForceSurface = force; }
+
 
 	private:
 
@@ -86,6 +102,9 @@ namespace odPhysics
 
 		bool mIsOnGround;
 		bool mIsSwimming;
+		bool mIsUnderwater;
+		bool mForceSurface;
+		float mSwimVerticalSpeed;
 		float mFallSpeed;
 	};
 

@@ -32,6 +32,7 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
     static const float SWIM_ENTER_DEPTH = 0.30f;    // water depth (over the ground) at which the character starts to swim
     static const float SWIM_EXIT_DEPTH = 0.22f;     // water depth below which it stops swimming. lower than the entry depth, so it doesn't flicker
     static const float SWIM_SUBMERSION = 0.30f;     // how far the feet are below the surface when swimming. the head stays out of the water
+    static const float SWIM_BED_CLEARANCE = 0.03f;  // how close to the ground a diving character can get
     static const float SWIM_LIFT_SPEED = 1.5f;      // how fast the character moves to the swimming height
     static const PhysicsTypeMasks::Mask SOLIDS = PhysicsTypeMasks::Layer | PhysicsTypeMasks::LevelObject;
 
@@ -46,6 +47,9 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	, mPendingMovement(0.0f)
 	, mIsOnGround(false)
 	, mIsSwimming(false)
+	, mIsUnderwater(false)
+	, mForceSurface(false)
+	, mSwimVerticalSpeed(0.0f)
 	, mFallSpeed(0.0f)
 	{
 	    // the object's origin is not necessarily at the character's feet. find out how far above them it is
@@ -163,6 +167,7 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	    if(!waterY.has_value())
 	    {
 	        mIsSwimming = false;
+	        mIsUnderwater = false;
 	        return false;
 	    }
 
@@ -189,13 +194,34 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 
 	    if(!mIsSwimming)
 	    {
+	        mIsUnderwater = false;
 	        return false;
 	    }
 
-	    // float at the surface (sinking or rising smoothly)
-	    float targetY = waterY.value() - SWIM_SUBMERSION + mFootOffset;
-	    float maxStep = SWIM_LIFT_SPEED*relTime;
-	    position.y += glm::clamp(targetY - position.y, -maxStep, maxStep);
+	    // the feet stay between the ground and the surface level at which the character floats with its head out of the water
+	    float highestFeetY = waterY.value() - SWIM_SUBMERSION;
+	    float lowestFeetY = std::min(groundY + SWIM_BED_CLEARANCE, highestFeetY);
+
+	    float verticalSpeed = mForceSurface ? SWIM_LIFT_SPEED : mSwimVerticalSpeed;
+	    float newFeetY = feetY + verticalSpeed*relTime;
+
+	    // if we are outside the allowed range (e.g. we just fell in), move back into it smoothly
+	    float maxCorrection = SWIM_LIFT_SPEED*relTime;
+	    if(feetY > highestFeetY)
+	    {
+	        newFeetY = std::max(highestFeetY, std::min(newFeetY, feetY - maxCorrection));
+
+	    }else if(feetY < lowestFeetY)
+	    {
+	        newFeetY = std::min(lowestFeetY, std::max(newFeetY, feetY + maxCorrection));
+
+	    }else
+	    {
+	        newFeetY = glm::clamp(newFeetY, lowestFeetY, highestFeetY);
+	    }
+
+	    position.y = newFeetY + mFootOffset;
+	    mIsUnderwater = (newFeetY + 0.9f*mHeight) < waterY.value();
 
 	    return true;
 	}

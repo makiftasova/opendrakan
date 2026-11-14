@@ -326,8 +326,29 @@ namespace odState
             // this snapshot is complete! move it to the timeline
             if(mSnapshots.size() >= TICK_CAPACITY)
             {
+                // evict the oldest snapshot that no pending incoming snapshot is delta-encoded against. if we evicted
+                //  one that is still needed as a reference (which happens when many snapshots referencing the same older
+                //  snapshot arrive in a burst, e.g. after a stall), we could not complete those anymore.
+                // if everything is still referenced, we let the timeline grow beyond its nominal capacity for now.
                 // TODO: implement this as a ring buffer or something so we don't loose the allocated extra StateBundles
-                mSnapshots.pop_front();
+                auto isReferenced = [this](const Snapshot &snapshot)
+                {
+                    for(auto &incoming : mIncomingSnapshots)
+                    {
+                        if(incoming.referenceSnapshot == snapshot.tick)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+                auto evictIt = std::find_if_not(mSnapshots.begin(), mSnapshots.end(), isReferenced);
+                if(evictIt != mSnapshots.end())
+                {
+                    // (invalidates iterators into mSnapshots, but we only look up the reference snapshot afterwards)
+                    mSnapshots.erase(evictIt);
+                }
             }
 
             // undo delta-encoding by merging incoming with the reference snapshot (only if this is not a full snapshot)

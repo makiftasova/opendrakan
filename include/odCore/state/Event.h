@@ -38,6 +38,7 @@ namespace od
 namespace odDb
 {
     class Animation;
+    class Sound;
 }
 
 namespace odState
@@ -93,9 +94,37 @@ namespace odState
     };
 
 
-    /*struct SoundEvent final : public Event
+    /**
+     * @brief Plays a sound at the position of an object. Only has an effect on clients.
+     */
+    struct ObjectSoundEvent final : public Event
     {
-    };*/
+        ObjectSoundEvent(od::LevelObjectId obj, const odDb::GlobalAssetRef &sound, float volume);
+        ObjectSoundEvent(od::DataReader &dr);
+
+        void serialize(od::DataWriter &dw) const;
+
+        od::LevelObjectId objectId;
+        odDb::GlobalAssetRef soundRef;
+        std::shared_ptr<odDb::Sound> sound; // filled in by the event queue when the event is received
+        float volume; // linear, 0..1
+    };
+
+
+    /**
+     * @brief Switches the background music. Only has an effect on clients.
+     */
+    struct MusicEvent final : public Event
+    {
+        MusicEvent(uint32_t musicId, float fadeInTime, float fadeOutTime);
+        MusicEvent(od::DataReader &dr);
+
+        void serialize(od::DataWriter &dw) const;
+
+        uint32_t musicId;
+        float fadeInTime;
+        float fadeOutTime;
+    };
 
 
     // NOTE: The order of type parameters determines the type discriminant,
@@ -103,7 +132,9 @@ namespace odState
     //        end, and instead of removing one, replace it with a dummy instead.
     using EventVariant = std::variant<ActionEvent,
                                       ObjectAnimEvent,
-                                      ObjectMessageEvent>;
+                                      ObjectMessageEvent,
+                                      ObjectSoundEvent,
+                                      MusicEvent>;
 
 
     struct EventVariantSerializer

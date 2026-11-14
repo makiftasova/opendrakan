@@ -50,6 +50,11 @@ namespace od
             e.animRef.globalDbIndex = mClient.translateGlobalDatabaseIndex(e.animRef.globalDbIndex);
         }
 
+        void operator()(odState::ObjectSoundEvent &e)
+        {
+            e.soundRef.globalDbIndex = mClient.translateGlobalDatabaseIndex(e.soundRef.globalDbIndex);
+        }
+
 
     private:
 

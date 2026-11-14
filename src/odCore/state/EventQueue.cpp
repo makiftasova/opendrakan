@@ -3,11 +3,16 @@
 
 #include <odCore/state/EventQueue.h>
 
+#include <odCore/Client.h>
+#include <odCore/Engine.h>
 #include <odCore/Level.h>
 #include <odCore/LevelObject.h>
 
 #include <odCore/db/DbManager.h>
 #include <odCore/db/Database.h>
+#include <odCore/db/Sound.h>
+
+#include <odCore/audio/SoundSystem.h>
 
 #include <odCore/net/DownlinkConnector.h>
 
@@ -37,6 +42,28 @@ namespace odState
         bool operator()(const ObjectAnimEvent &event)
         {
             return _objectEvent(event, event.objectId);
+        }
+
+        bool operator()(const ObjectSoundEvent &event)
+        {
+            return _objectEvent(event, event.objectId);
+        }
+
+        bool operator()(const MusicEvent &event)
+        {
+            auto &engine = mLevel.getEngine();
+            if(engine.isClient())
+            {
+                auto soundSystem = engine.getClient().getSoundSystem();
+                if(soundSystem != nullptr)
+                {
+                    Logger::verbose() << "Switching music to " << event.musicId;
+                    // TODO: fade times
+                    soundSystem->playMusic(event.musicId);
+                }
+            }
+
+            return true;
         }
 
 
@@ -74,6 +101,11 @@ namespace odState
         void operator()(ObjectAnimEvent &event)
         {
             event.anim = dbManager.loadAsset<odDb::Animation>(event.animRef);
+        }
+
+        void operator()(ObjectSoundEvent &event)
+        {
+            event.sound = dbManager.loadAsset<odDb::Sound>(event.soundRef);
         }
     };
 

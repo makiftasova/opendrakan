@@ -5,8 +5,13 @@
 
 #include <odCore/Level.h>
 #include <odCore/LevelObject.h>
+#include <odCore/Engine.h>
 #include <odCore/Message.h>
 #include <odCore/Panic.h>
+
+#include <odCore/state/EventQueue.h>
+
+#include <odCore/db/Sound.h>
 
 #include <odCore/anim/SkeletonAnimationPlayer.h>
 #include <odCore/anim/BoneAccumulator.h>
@@ -350,7 +355,15 @@ namespace odAnim
 
         void operator()(const PlayerActionPlaySound &a)
         {
-            //float dt = mSequenceTime - a.timeOffset;
+            if(a.sound == nullptr)
+            {
+                return;
+            }
+
+            // sounds are played by clients, which learn about this via an event
+            float volume = std::max(0.0f, std::min(1.0f, a.volume / 10000.0f));
+            odState::ObjectSoundEvent soundEvent(mActor.actorObject->getObjectId(), a.sound->getGlobalAssetRef(), volume);
+            mActor.actorObject->getLevel().getEngine().getEventQueue().logEvent(soundEvent);
         }
 
         void operator()(const odDb::ActionAttach &a)
@@ -376,7 +389,8 @@ namespace odAnim
 
         void operator()(const odDb::ActionMusic &a)
         {
-            //float dt = mSequenceTime - a.timeOffset;
+            odState::MusicEvent musicEvent(a.musicId, a.fadeInTime, a.fadeOutTime);
+            mActor.actorObject->getLevel().getEngine().getEventQueue().logEvent(musicEvent);
         }
 
 

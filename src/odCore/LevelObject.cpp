@@ -16,12 +16,15 @@
 #include <odCore/Panic.h>
 #include <odCore/ObjectLightReceiver.h>
 
+#include <odCore/audio/SoundSystem.h>
+
 #include <odCore/anim/Skeleton.h>
 #include <odCore/anim/SkeletonAnimationPlayer.h>
 
 #include <odCore/db/Animation.h>
 #include <odCore/db/Model.h>
 #include <odCore/db/ModelBounds.h>
+#include <odCore/db/Sound.h>
 #include <odCore/db/SkeletonDefinition.h>
 
 #include <odCore/net/DownlinkConnector.h>
@@ -609,6 +612,23 @@ namespace od
         }
     }
 
+    void LevelObject::playSoundUntracked(odAudio::SoundSystem &soundSystem, std::shared_ptr<odDb::Sound> sound, float volume)
+    {
+        // forget about sources that have finished
+        auto finished = [](std::shared_ptr<odAudio::Source> &s){ return s->getState() == odAudio::Source::State::Stopped; };
+        mSoundSources.erase(std::remove_if(mSoundSources.begin(), mSoundSources.end(), finished), mSoundSources.end());
+
+        Logger::verbose() << "Object " << getObjectId() << " playing sound '" << sound->getName() << "' with volume " << volume;
+
+        auto source = soundSystem.createSource();
+        source->setPosition(getPosition());
+        source->setGain(volume);
+        source->setSound(sound);
+        source->play(0.0f);
+
+        mSoundSources.push_back(source);
+    }
+
     void LevelObject::setupSkeleton()
     {
         if(mModel != nullptr && mModel->hasSkeleton())
@@ -699,6 +719,29 @@ namespace od
             if(mObj.mSkeletonAnimationPlayer != nullptr && mTimeDelta > 0)
             {
                 mObj.mSkeletonAnimationPlayer->update(mTimeDelta);
+            }
+
+            return true;
+        }
+
+        bool operator()(const odState::ObjectSoundEvent &event)
+        {
+            auto &engine = mObj.getLevel().getEngine();
+            if(!engine.isClient())
+            {
+                return true; // sounds are only played on clients
+            }
+
+            if(event.sound == nullptr)
+            {
+                Logger::warn() << "Event queue failed to prefetch sound for event. Dropping it";
+                return true;
+            }
+
+            odAudio::SoundSystem *soundSystem = engine.getClient().getSoundSystem();
+            if(soundSystem != nullptr)
+            {
+                mObj.playSoundUntracked(*soundSystem, event.sound, event.volume);
             }
 
             return true;

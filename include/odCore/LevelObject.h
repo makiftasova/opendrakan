@@ -9,6 +9,7 @@
 #define OBJECT_H_
 
 #include <memory>
+#include <vector>
 #include <array>
 
 #include <glm/vec3.hpp>
@@ -27,10 +28,17 @@
 
 #include <odCore/state/Event.h>
 
+#include <odCore/audio/Source.h>
+
 namespace odAnim
 {
     class Skeleton;
     class SkeletonAnimationPlayer;
+}
+
+namespace odAudio
+{
+    class SoundSystem;
 }
 
 namespace odDb
@@ -241,6 +249,13 @@ namespace od
         void playAnimationUntracked(std::shared_ptr<odDb::Animation> anim, const odAnim::AnimModes &modes);
 
         /**
+         * @brief Plays a sound at this object's position, using the given sound system (so this only makes sense on clients).
+         *
+         * This does not notify other parties. It is used to execute sound events.
+         */
+        void playSoundUntracked(odAudio::SoundSystem &soundSystem, std::shared_ptr<odDb::Sound> sound, float volume);
+
+        /**
          * This returns true if the event was handled (an event being ignored counts as handled in this context).
          * However, sometimes events can not be processed immediately, like when an object is not being run.
          * In that case, this will return false to indicate event processing should be delayed. The same event
@@ -288,6 +303,7 @@ namespace od
         std::unique_ptr<ObjectLightReceiver> mLightReceiver;
         std::shared_ptr<odAnim::Skeleton> mSkeleton;
         std::shared_ptr<odAnim::SkeletonAnimationPlayer> mSkeletonAnimationPlayer;
+        std::vector<std::shared_ptr<odAudio::Source>> mSoundSources; // keeps sounds that are playing alive
     };
 
 }

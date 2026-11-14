@@ -5,6 +5,8 @@
 
 #include <odCore/DataStream.h>
 
+#include <odCore/db/Sound.h>
+
 namespace odState
 {
 
@@ -99,6 +101,50 @@ namespace odState
         dw << senderObjectId
            << receiverObjectId
            << static_cast<std::underlying_type_t<od::Message>>(message);
+    }
+
+
+    ObjectSoundEvent::ObjectSoundEvent(od::LevelObjectId obj, const odDb::GlobalAssetRef &s, float v)
+    : objectId(obj)
+    , soundRef(s)
+    , volume(v)
+    {
+    }
+
+    ObjectSoundEvent::ObjectSoundEvent(od::DataReader &dr)
+    {
+        dr >> objectId
+           >> soundRef
+           >> volume;
+    }
+
+    void ObjectSoundEvent::serialize(od::DataWriter &dw) const
+    {
+        dw << objectId
+           << soundRef
+           << volume;
+    }
+
+
+    MusicEvent::MusicEvent(uint32_t id, float fadeIn, float fadeOut)
+    : musicId(id)
+    , fadeInTime(fadeIn)
+    , fadeOutTime(fadeOut)
+    {
+    }
+
+    MusicEvent::MusicEvent(od::DataReader &dr)
+    {
+        dr >> musicId
+           >> fadeInTime
+           >> fadeOutTime;
+    }
+
+    void MusicEvent::serialize(od::DataWriter &dw) const
+    {
+        dw << musicId
+           << fadeInTime
+           << fadeOutTime;
     }
 
 

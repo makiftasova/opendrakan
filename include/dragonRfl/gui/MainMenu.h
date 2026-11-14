@@ -8,6 +8,9 @@
 #ifndef INCLUDE_GUI_MAINMENU_H_
 #define INCLUDE_GUI_MAINMENU_H_
 
+#include <memory>
+#include <vector>
+
 #include <odCore/gui/Widget.h>
 
 namespace odDb
@@ -19,6 +22,7 @@ namespace dragonRfl
 {
 
     class DragonGui;
+    class CrystalRingButton;
     class UserInterfacePropertiesFields;
 
     class MainMenu : public odGui::Widget
@@ -26,6 +30,11 @@ namespace dragonRfl
     public:
 
         MainMenu(DragonGui &gui, UserInterfacePropertiesFields *uiProps);
+
+        /**
+         * @brief Stops the hover sounds of all buttons. Needed when the menu is hidden, since buttons don't notice that the mouse left them then.
+         */
+        void stopButtonSounds();
 
 
     private:
@@ -47,6 +56,8 @@ namespace dragonRfl
         void _buttonClicked(int buttonCode);
 
         DragonGui &mDragonGui;
+
+        std::vector<std::shared_ptr<CrystalRingButton>> mCrystalButtons;
 
     };
 

@@ -144,6 +144,15 @@ namespace dragonRfl
 
     CrystalRingButton::~CrystalRingButton()
     {
+        stopHoverSound(0.0f);
+    }
+
+    void CrystalRingButton::stopHoverSound(float fadeOutTime)
+    {
+        if(mSoundSource != nullptr && mSoundSource->isPlaying())
+        {
+            mSoundSource->stop(fadeOutTime);
+        }
     }
 
     bool CrystalRingButton::liesWithinLogicalArea(const glm::vec2 &pos)

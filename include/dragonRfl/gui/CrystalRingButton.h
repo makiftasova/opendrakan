@@ -45,6 +45,11 @@ namespace dragonRfl
         inline void setActiveCrystalColor(const glm::vec4 &color) { mCrystalColorActive = color; }
         inline void setClickedCallback(const std::function<void(int)> &callback, int userData) { mClickedCallback = callback; mCallbackUserData = userData; }
 
+        /**
+         * @brief Stops the looping hover sound, if it is playing. (the mouse can leave the button without us noticing, e.g. if the menu gets hidden)
+         */
+        void stopHoverSound(float fadeOutTime);
+
         virtual bool liesWithinLogicalArea(const glm::vec2 &pos) override;
         virtual void onMouseDown(const glm::vec2 &pos, int button) override;
         virtual void onMouseEnter(const glm::vec2 &pos) override;

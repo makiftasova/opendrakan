@@ -117,6 +117,15 @@ namespace dragonRfl
         crystal->setOrigin(odGui::WidgetOrigin::Center);
         crystal->setClickedCallback(std::bind(&MainMenu::_buttonClicked, this, std::placeholders::_1), buttonCode);
         cont->addChild(crystal);
+        mCrystalButtons.push_back(crystal);
+    }
+
+    void MainMenu::stopButtonSounds()
+    {
+        for(auto &button : mCrystalButtons)
+        {
+            button->stopHoverSound(0.3f);
+        }
     }
 
     void MainMenu::_buttonClicked(int buttonCode)

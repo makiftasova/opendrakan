@@ -178,6 +178,12 @@ namespace dragonRfl
         if(mMainMenu != nullptr)
         {
             mMainMenu->setVisible(isMenuMode());
+
+            if(!isMenuMode())
+            {
+                // buttons don't get notified when the mouse leaves them because the menu goes away
+                mMainMenu->stopButtonSounds();
+            }
         }
     }
 

@@ -18,6 +18,9 @@ them when you learn something new about the original engine. Contributors add fi
 | `clean_room_reviewer.md` | Rules for the reviewer only. Give this file, and nothing else, to the reviewer session. |
 | `commit_messages.md` | Commit message and history rules. |
 | `collision_behaviour.md` | Clean-room description of the original character collision: ground height, snapping, falling, recovery. Implement from this text only. |
+| `attachment_behaviour.md` | Clean-room description of how items attach to character channels (weapons). Implement from this text only. |
+| `animation_channels_behaviour.md` | Clean-room description of animation channels, propagation, cutscene actions and transitions. Implement from this text only. |
+| `water_behaviour.md` | Clean-room description of water: surface types, swimming, breath, rendering, currents. Implement from this text only. |
 | `lighting.md` | How Riot lighting works (baked layer light, blending, dynamic lights). Used by `Layer`, `Light`, physics light dispatch. |
 | `music.md` | DirectMusic data in `Music.rrc` (segments 0x1.., DLS 0x100.., volumes 0x1001..). |
 | `volume.md` | Notes on sound volume (millibel) scaling. |

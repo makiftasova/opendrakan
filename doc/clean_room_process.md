@@ -50,7 +50,7 @@ When you start the other roles:
 ## Provenance and leaks
 
 - Save each finished description in `doc/` with a provenance header. The header names the examiner and reviewer sessions and
-  says the description contains no code.
+  says the description contains no code. Mathematical-style pseudo-code that follows the examiner rules is allowed.
 - The history then shows the specification before the implementation.
 - If something leaks, tell the others, delete the material, don't rely on it and note it in the provenance header.
 - Never commit game assets or other copyrighted material.

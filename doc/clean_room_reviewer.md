@@ -17,15 +17,33 @@ The file may contain only:
 
 - plain English prose,
 - formulas written as math, numeric constants and descriptions of the order of operations,
+- mathematical-style pseudo-code that follows the rules below,
 - descriptions of public data formats,
 - confidence labels, such as CERTAIN, LIKELY, GUESS and "not determined",
 - short messages that the program shows to users.
+
+### Acceptable pseudo-code
+
+Mathematical-style pseudo-code is fine when all of these are true:
+
+- It uses ASCII only and standard mathematical functions (`floor`, `ceil`, `abs`, `min`, `max`, `sqrt`, `sin`, `cos`, `sum`).
+- The file defines its symbols in plain English, and the symbols are descriptive names, not names that look taken from a program.
+- It defines quantities as formulas of inputs (`=`, `:=`) or states a case distinction on values (`if ... then ... else`).
+- Indexed quantities are mathematical sequences, vectors or matrices that the file defines.
+
+It isn't acceptable (flag it as `code`) when it:
+
+- mirrors the flow of a program: loops over program data structures, early returns, jumps, set-and-test flags, or one statement
+  per instruction,
+- uses member access, pointers or scope syntax (`a.b`, `a->b`, `x::y`) or the program's own data structures,
+- calls functions other than standard mathematical ones,
+- reads like a transcription of code in another notation.
 
 ## Leaks
 
 Flag any of these:
 
-- source code, pseudo-code, assembly or decompiler output, even short fragments,
+- source code, assembly or decompiler output, even short fragments, and pseudo-code that doesn't follow the rules above,
 - function, symbol or class names,
 - addresses, offsets and hexadecimal values that look like either,
 - structure layouts, field tables and bit-position tables of internal data,
@@ -34,7 +52,7 @@ Flag any of these:
 
 Check these cases carefully:
 
-- Inline fragments that look like code, such as `a->b`, `x::y`, array indexing or assignments.
+- Inline fragments that look like code, such as `a->b`, `x::y`, or indexing into program memory. Assignments written as formulas of defined symbols are fine.
 - Names in camelCase, snake_case or with a prefix that looks like a symbol.
 - Hexadecimal numbers. Constants that are values (for example a tolerance) are fine. Addresses and offsets aren't.
 - Tables of fields, offsets or bits.

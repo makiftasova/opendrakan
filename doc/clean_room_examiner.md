@@ -21,6 +21,7 @@ Write the description in your own words. It must contain only:
 
 - plain English prose,
 - plain math: formulas, numeric constants and the order of operations,
+- mathematical-style pseudo-code (see below),
 - descriptions of public data formats,
 - confidence labels.
 
@@ -35,11 +36,35 @@ Label each statement with one of these levels:
 
 Don't guess silently. If you couldn't answer a question, say so.
 
+### Mathematical-style pseudo-code
+
+A short formula or a few numbered formulas often say more than a paragraph of prose. You may use
+[mathematical-style pseudo-code](https://en.wikipedia.org/wiki/Pseudocode#Mathematical_style_pseudocode) under these rules:
+
+- Use ASCII only. Write `>=`, `<=`, `!=`, `floor(x)`, `ceil(x)`, `abs(x)`, `min(a, b)`, `max(a, b)`, `sqrt(x)`, `sin(x)`, `cos(x)`
+  and `sum(...)`.
+- Define every symbol in plain English before you use it. Choose short, descriptive symbols of your own, such as `speed`,
+  `pitch` or `t_next`. Never use names that you saw in the program.
+- Describe results as functions of inputs: `v_new = v_old + accel * dt`. Use `=` to define a quantity and `:=` to update one.
+- Use `if ... then ... else` and `case` only to express a mathematical case distinction on values.
+- Number the steps if the order matters.
+- Subscripts and indexed quantities are fine for mathematical sequences, vectors and matrices that you define yourself.
+
+The pseudo-code must describe behavior, not the structure of the code. Don't write:
+
+- statements that mirror the flow of the program: loops over the program's data structures, early returns, jumps, flags that
+  are set and tested, or one statement per instruction,
+- member access, pointers or scope syntax (`a.b`, `a->b`, `x::y`) or the program's own data structures,
+- calls to anything other than the standard mathematical functions above,
+- anything that is a transcription of code, even if you translated it to another notation.
+
+If a formula looks like what the code does, step by step, describe the result instead.
+
 ## Prohibited content
 
 Never put any of these in the description:
 
-- source code, pseudo-code, assembly or decompiler output, even short fragments,
+- source code, assembly or decompiler output, even short fragments, and pseudo-code that doesn't follow the rules above,
 - function, symbol or class names from the original program,
 - addresses, offsets and hexadecimal values that look like either,
 - structure layouts, field tables and bit-position tables of internal data,

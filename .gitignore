@@ -7,3 +7,6 @@ build-release/
 .cproject
 .vscode/
 .clang_complete
+
+# local, machine-specific configuration of agent skills
+.agents/skills/*/local/

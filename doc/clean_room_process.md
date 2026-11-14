@@ -8,6 +8,8 @@ When you need to know how the original program behaves, split the work into thre
 Prefer public specifications and analysis of the game's data files first. Inspect the original program only when they can't
 answer the question.
 
+The `clean-room` skill (`.agents/skills/clean-room/`) automates the steps below with scripts.
+
 ## Roles and rule files
 
 Each role has its own rule file. Give each session only the file for its role.

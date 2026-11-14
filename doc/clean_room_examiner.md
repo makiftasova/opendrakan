@@ -8,6 +8,8 @@ program's code looks.
 
 - Work in a scratch directory outside the repository.
 - Keep working files, notes and transcripts out of the repository.
+- Use only the original program and the game files. Never read the re-implementation: its source code, documentation,
+  git history, notes or build output. Values from there are not evidence about the original program.
 - Inspect the original program statically only. Don't run it, or any part of it (executables, installers, tools).
   This applies to emulators, compatibility layers and headless displays too.
 - Answer only the questions in the brief. Don't describe unrelated parts of the program.

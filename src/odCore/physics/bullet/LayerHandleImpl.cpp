@@ -88,6 +88,7 @@ namespace odBulletPhysics
 
         // second, push indices for each triangle, ignoring those without texture as these define holes the player can walk/fall through
         mesh->preallocateIndices(mLayer.getCollidingTriangleCount() * 3);
+        size_t solidTriangles = 0;
         for(size_t triIndex = 0; triIndex < width*height*2; ++triIndex)
         {
             size_t cellIndex = triIndex/2;
@@ -99,6 +100,14 @@ namespace odBulletPhysics
             {
                 continue;
             }
+
+            // water is not solid. characters enter it (and swim in it) instead of walking on it
+            if(mLayer.isWaterTriangle(cellIndex, isLeft))
+            {
+                continue;
+            }
+
+            ++solidTriangles;
 
             int aZRel = cellIndex/width; // has to be an integer operation to floor it
 
@@ -130,6 +139,13 @@ namespace odBulletPhysics
                     mesh->addTriangleIndices(a, d, b);
                 }
             }
+        }
+
+        if(solidTriangles == 0)
+        {
+            // e.g. a layer that is only water. bullet can't build a shape from an empty mesh
+            mTriMesh = nullptr;
+            return;
         }
 
         mShape = std::make_unique<btBvhTriangleMeshShape>(mesh, true, true);

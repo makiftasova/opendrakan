@@ -70,6 +70,22 @@ namespace od
         mDestructionQueue.insert(objId);
     }
 
+    std::optional<float> Level::getWaterSurfaceHeightAt(const glm::vec2 &xz, float minHeight)
+    {
+        std::optional<float> best;
+
+        for(auto &layer : mLayers)
+        {
+            float height;
+            if(layer->getWaterSurfaceHeightAt(xz, height) && height >= minHeight && (!best.has_value() || height < best.value()))
+            {
+                best = height;
+            }
+        }
+
+        return best;
+    }
+
     Layer *Level::getLayerById(uint32_t id)
     {
         // TODO: we can do better than O(n)

@@ -77,8 +77,12 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Character controlled by AI
     - Dragon controlled by AI
 - Water
-    - Water layers are solid right now, so Rynn walks on top of the water.
-    - Stream classes are hidden. Swimming and water volumes are missing (needed for the caves under the Inn).
+    - Done: terrain with water vertices (type 49) isn't solid. The character swims when the water is at least 0.3 deep.
+      It floats at the surface, plays the swim animations and moves with the class's swim speeds.
+    - Missing: diving and breath (drowning), flowing water types and currents, the splash and underwater sounds,
+      and the swim-to-run transition when leaving the water.
+    - Missing in rendering: scrolling water textures, the underwater tint and fog. Stream classes are still hidden.
+    - See `doc/water_behaviour.md`.
 - AI
 - SFX handling
     - If something needs to play SFX, right now that means it has to create it's own sound source. While this obviously works, it might
@@ -89,3 +93,9 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
 - Pure OpenGL (or even Vulkan) renderer
     - OSG is a pretty heavy dependency and we only use a small subset of it. A better, pure OpenGL renderer shouldn't be too hard to implement
         
+- Cheats and developer console
+    - Add cheats for testing: god mode (for Rynn and Arokh), heal to full health, give items, spawn items near the player.
+    - Needs an in-game developer console and text rendering (see the GUI section).
+- Subtitles
+    - Dialogue text is stored in the game data. Show it on screen, timed with the dialogue sounds.
+    - Subtitles are an important accessibility option. Make them configurable (on/off, size).

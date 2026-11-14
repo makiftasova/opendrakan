@@ -7,6 +7,7 @@
 
 #include <dragonRfl/classes/HumanControl.h>
 
+
 #include <dragonRfl/RflDragon.h>
 
 #include <vector>
@@ -135,18 +136,44 @@ namespace dragonRfl
         auto &obj = getLevelObject();
 
         obj.setRotation(glm::quat(glm::vec3(0, mYaw, 0)));
-
         float yawSpeed = (mYaw - mLastUpdatedYaw)/relTime;
         mLastUpdatedYaw = mYaw;
 
         auto animPlayer = obj.getSkeletonAnimationPlayer();
 
         // handle state transitions that might happen during update
-        switch(mState)
+        bool swimming = (mCharacterController != nullptr) && mCharacterController->isSwimming();
+        if(swimming != mWasSwimming)
+        {
+            // entered or left the water. pick the matching animation for what we are doing
+            mWasSwimming = swimming;
+            Logger::verbose() << "Player " << (swimming ? "starts" : "stops") << " swimming";
+            _playMovementAnim();
+        }
+
+        if(swimming && mCharacterController != nullptr)
+        {
+            // swimming is not driven by the animation's motion but by the speeds the class defines
+            if(mState == State::RunningForward)
+            {
+                mCharacterController->moveRelative(glm::vec3(0, 0, -1)*mFields.swimForwardSpeed.get()*relTime, relTime);
+
+            }else if(mState == State::RunningBackward)
+            {
+                mCharacterController->moveRelative(glm::vec3(0, 0, -1)*mFields.swimBackwardSpeed.get()*relTime, relTime);
+            }
+        }
+
+        switch(swimming ? State::Idling : mState)
         {
         case State::Idling:
         case State::TurningLeft:
         case State::TurningRight:
+            if(swimming)
+            {
+                break;
+            }
+
             if(yawSpeed >= TURN_ANIM_THRESHOLD)
             {
                 _playAnim(mFields.turnLeft, true, false);
@@ -197,13 +224,13 @@ namespace dragonRfl
             switch(action)
             {
             case Action::Forward:
-                _playAnim(mFields.runAnim, false, true, clientLag);
                 mState = State::RunningForward;
+                _playMovementAnim(clientLag);
                 break;
 
             case Action::Backward:
-                _playAnim(mFields.runBackwards, false, true, clientLag);
                 mState = State::RunningBackward;
+                _playMovementAnim(clientLag);
                 break;
 
             case Action::Attack_Primary:
@@ -217,8 +244,65 @@ namespace dragonRfl
 
         }else
         {
-            _playAnim(mFields.readyAnim, true, true, clientLag);
             mState = State::Idling;
+            _playMovementAnim(clientLag);
+        }
+    }
+
+    void HumanControl_Sv::_playMovementAnim(float skipAhead)
+    {
+        bool swimming = (mCharacterController != nullptr) && mCharacterController->isSwimming();
+
+        if(swimming)
+        {
+            switch(mState)
+            {
+            case State::RunningForward:
+                _playSwimAnim(mFields.swim);
+                break;
+
+            case State::RunningBackward:
+                _playSwimAnim(mFields.backswim);
+                break;
+
+            default:
+                _playSwimAnim(mFields.treadWater);
+                break;
+            }
+
+        }else
+        {
+            switch(mState)
+            {
+            case State::RunningForward:
+                _playAnim(mFields.runAnim, false, true, skipAhead);
+                break;
+
+            case State::RunningBackward:
+                _playAnim(mFields.runBackwards, false, true, skipAhead);
+                break;
+
+            default:
+                _playAnim(mFields.readyAnim, true, true, skipAhead);
+                break;
+            }
+        }
+    }
+
+    void HumanControl_Sv::_playSwimAnim(const odRfl::AnimRef &animRef)
+    {
+        // the motion comes from the swim speeds, so the root motion of the animation is dropped (it would move the mesh otherwise)
+        odAnim::AnimModes modes;
+        modes.playbackType = odAnim::PlaybackType::LOOPING;
+        modes.boneModes = { odAnim::BoneMode::IGNORE, odAnim::BoneMode::NORMAL, odAnim::BoneMode::IGNORE };
+
+        auto animPlayer = getLevelObject().getSkeletonAnimationPlayer();
+        auto anim = animRef.getAsset();
+        if(animPlayer != nullptr && anim != nullptr)
+        {
+            Logger::verbose() << "Player plays swim animation '" << anim->getName() << "'";
+            getLevelObject().playAnimation(anim, modes);
+            animPlayer->setBoneModes(modes.boneModes, 0);
         }
     }
 

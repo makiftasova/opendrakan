@@ -48,11 +48,22 @@ namespace odPhysics
 
 		inline bool isOnGround() const { return mIsOnGround; }
 
+		/**
+		 * @brief True while the character swims. It starts to swim when the water is deep enough and then floats at the surface.
+		 */
+		inline bool isSwimming() const { return mIsSwimming; }
+
 
 	private:
 
 		glm::vec3 _moveHorizontally(const glm::vec3 &position, const glm::vec3 &movement);
 		glm::vec3 _followGround(const glm::vec3 &position, float relTime);
+
+		/**
+		 * @brief Decides whether we swim, and if so, keeps the character floating at the surface.
+		 * @return True if the character is swimming. Then, the position has been updated and no ground following should happen.
+		 */
+		bool _updateSwimming(glm::vec3 &position, float relTime);
 
 		/**
 		 * @brief Finds how far the character can move in the given direction (a unit vector) before hitting a wall.
@@ -74,6 +85,7 @@ namespace odPhysics
 		glm::vec3 mPendingMovement;
 
 		bool mIsOnGround;
+		bool mIsSwimming;
 		float mFallSpeed;
 	};
 

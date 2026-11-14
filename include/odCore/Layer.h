@@ -143,6 +143,22 @@ namespace od
          */
         bool hasHoleAt(const glm::vec2 &absolutePos);
 
+        /**
+         * @brief Terrain vertex type that marks still water. See doc/water_behaviour.md.
+         */
+        static constexpr uint8_t WATER_VERTEX_TYPE = 49;
+
+        /**
+         * @brief Returns true if all three corners of the given triangle are water vertices.
+         * Triangles are numbered like in the collision shape: each cell has a left and a right triangle.
+         */
+        bool isWaterTriangle(size_t cellIndex, bool isLeft) const;
+
+        /**
+         * @brief If the terrain at the given position is water, returns true and stores the absolute height of the surface in @p height.
+         */
+        bool getWaterSurfaceHeightAt(const glm::vec2 &absolutePos, float &height);
+
         bool contains(const glm::vec2 &xzCoord);
         bool contains(const glm::vec2 &xzCoord, float epsilon);
 

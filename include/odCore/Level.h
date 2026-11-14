@@ -12,8 +12,10 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <optional>
 #include <unordered_set>
 #include <unordered_map>
+#include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
 #include <odCore/IdTypes.h>
@@ -54,6 +56,12 @@ namespace od
         void addToDestructionQueue(LevelObjectId objId);
 
         Layer *getLayerById(LayerId id);
+
+        /**
+         * @brief Finds the closest water surface at or above @p minHeight at the given position.
+         * @return The surface's absolute height, or nothing if there's no water above that height.
+         */
+        std::optional<float> getWaterSurfaceHeightAt(const glm::vec2 &xz, float minHeight);
         Layer *getLayerByIndex(uint16_t index); // FIXME: this should be removed (if possible). the index is really only correct during loading
         void findAdjacentAndOverlappingLayers(Layer *checkLayer, std::vector<Layer*> &results);
 

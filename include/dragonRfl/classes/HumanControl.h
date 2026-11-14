@@ -58,6 +58,8 @@ namespace dragonRfl
         void _handleAnalogAction(Action action, const glm::vec2 &pos);
         void _attack();
 		void _playAnim(const odRfl::AnimRef &animRef, bool skeletonOnly, bool looping, float skipAhead = 0.0);
+		void _playSwimAnim(const odRfl::AnimRef &animRef);
+		void _playMovementAnim(float skipAhead = 0.0f);
 
 		HumanControlFields mFields;
 
@@ -69,6 +71,7 @@ namespace dragonRfl
 
 		std::shared_ptr<odPhysics::CharacterController> mCharacterController;
 		float mLogTimer = 0.0f;
+		bool mWasSwimming = false;
 	};
 
 

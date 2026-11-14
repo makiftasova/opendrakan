@@ -274,6 +274,79 @@ namespace od
         return texture == HoleTextureRef;
     }
 
+    bool Layer::isWaterTriangle(size_t cellIndex, bool isLeft) const
+    {
+        if(cellIndex >= mCells.size())
+        {
+            return false;
+        }
+
+        size_t cellZ = cellIndex/mWidth;
+        size_t a = cellIndex + cellZ; // same corner indices as in the collision shape
+        size_t b = a + 1;
+        size_t c = a + (mWidth+1);
+        size_t d = c + 1;
+
+        size_t corners[3];
+        if(!(mCells[cellIndex].flags & OD_LAYER_FLAG_DIV_BACKSLASH))
+        {
+            if(isLeft) { corners[0] = c; corners[1] = b; corners[2] = a; }
+            else       { corners[0] = c; corners[1] = d; corners[2] = b; }
+
+        }else
+        {
+            if(isLeft) { corners[0] = a; corners[1] = c; corners[2] = d; }
+            else       { corners[0] = a; corners[1] = d; corners[2] = b; }
+        }
+
+        for(size_t corner : corners)
+        {
+            if(corner >= mVertices.size() || mVertices[corner].type != WATER_VERTEX_TYPE)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Layer::getWaterSurfaceHeightAt(const glm::vec2 &absolutePos, float &height)
+    {
+        if(!contains(absolutePos))
+        {
+            return false;
+        }
+
+        glm::vec2 relativePos = absolutePos - glm::vec2(mOriginX, mOriginZ);
+
+        // same handling of the layer's border as in hasHoleAt()
+        const float epsilon = 0.00001f;
+        if(relativePos.x >= mWidth) relativePos.x = mWidth - epsilon;
+        else if(relativePos.x <= 0) relativePos.x = epsilon;
+        if(relativePos.y >= mHeight) relativePos.y = mHeight - epsilon;
+        else if(relativePos.y <= 0) relativePos.y = epsilon;
+
+        float cellX = std::floor(relativePos.x);
+        float cellZ = std::floor(relativePos.y);
+        float fractX = relativePos.x - cellX;
+        float fractZ = relativePos.y - cellZ;
+
+        size_t cellIndex = static_cast<size_t>(cellX) + static_cast<size_t>(cellZ)*mWidth;
+        if(cellIndex >= mCells.size())
+        {
+            return false;
+        }
+
+        bool isLeftTriangle = (mCells[cellIndex].flags & OD_LAYER_FLAG_DIV_BACKSLASH) ? (fractX < fractZ) : (1 - fractX > fractZ);
+        if(!isWaterTriangle(cellIndex, isLeftTriangle))
+        {
+            return false;
+        }
+
+        height = getAbsoluteHeightAt(absolutePos);
+        return !std::isnan(height);
+    }
+
     bool Layer::contains(const glm::vec2 &xzCoord)
     {
         return xzCoord.x >= mOriginX && xzCoord.x <= (mOriginX+mWidth)

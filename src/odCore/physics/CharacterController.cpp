@@ -29,6 +29,10 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
     static const float MIN_GROUND_NORMAL_Y = 0.5f;  // surfaces steeper than this can't be walked on
     static const float MAX_WALL_NORMAL_Y = 0.7f;    // surfaces flatter than this don't block horizontal movement
     static const float SKIN = 0.005f;               // distance to keep from walls
+    static const float SWIM_ENTER_DEPTH = 0.30f;    // water depth (over the ground) at which the character starts to swim
+    static const float SWIM_EXIT_DEPTH = 0.22f;     // water depth below which it stops swimming. lower than the entry depth, so it doesn't flicker
+    static const float SWIM_SUBMERSION = 0.30f;     // how far the feet are below the surface when swimming. the head stays out of the water
+    static const float SWIM_LIFT_SPEED = 1.5f;      // how fast the character moves to the swimming height
     static const PhysicsTypeMasks::Mask SOLIDS = PhysicsTypeMasks::Layer | PhysicsTypeMasks::LevelObject;
 
 
@@ -41,6 +45,7 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	, mFootOffset(0.0f)
 	, mPendingMovement(0.0f)
 	, mIsOnGround(false)
+	, mIsSwimming(false)
 	, mFallSpeed(0.0f)
 	{
 	    // the object's origin is not necessarily at the character's feet. find out how far above them it is
@@ -73,7 +78,10 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	        newPosition = _moveHorizontally(newPosition, movement);
 	    }
 
-	    newPosition = _followGround(newPosition, relTime);
+	    if(!_updateSwimming(newPosition, relTime))
+	    {
+	        newPosition = _followGround(newPosition, relTime);
+	    }
 
 	    if(newPosition != position)
 	    {
@@ -145,6 +153,51 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	    }
 
 	    return newPosition;
+	}
+
+	bool CharacterController::_updateSwimming(glm::vec3 &position, float relTime)
+	{
+	    float feetY = position.y - mFootOffset;
+
+	    auto waterY = mCharObject.getLevel().getWaterSurfaceHeightAt(glm::vec2(position.x, position.z), feetY - 0.02f);
+	    if(!waterY.has_value())
+	    {
+	        mIsSwimming = false;
+	        return false;
+	    }
+
+	    // find the ground below the water to know how deep the water is
+	    glm::vec3 from(position.x, std::min(feetY + GROUND_PROBE_HEIGHT, waterY.value()), position.z);
+	    glm::vec3 to(position.x, waterY.value() - 20.0f, position.z);
+	    RayTestResult result;
+	    float groundY = (mPhysicsSystem.rayTestClosest(from, to, SOLIDS, mObjectHandle, result) && result.hitNormal.y > MIN_GROUND_NORMAL_Y) ? result.hitPoint.y : (waterY.value() - 20.0f);
+	    float depth = waterY.value() - groundY;
+
+	    if(!mIsSwimming)
+	    {
+	        if(depth >= SWIM_ENTER_DEPTH && feetY <= waterY.value() - 0.10f)
+	        {
+	            mIsSwimming = true;
+	            mIsOnGround = false;
+	            mFallSpeed = 0.0f;
+	        }
+
+	    }else if(depth < SWIM_EXIT_DEPTH)
+	    {
+	        mIsSwimming = false;
+	    }
+
+	    if(!mIsSwimming)
+	    {
+	        return false;
+	    }
+
+	    // float at the surface (sinking or rising smoothly)
+	    float targetY = waterY.value() - SWIM_SUBMERSION + mFootOffset;
+	    float maxStep = SWIM_LIFT_SPEED*relTime;
+	    position.y += glm::clamp(targetY - position.y, -maxStep, maxStep);
+
+	    return true;
 	}
 
 	glm::vec3 CharacterController::_followGround(const glm::vec3 &position, float relTime)

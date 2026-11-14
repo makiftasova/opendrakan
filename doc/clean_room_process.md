@@ -30,6 +30,11 @@ Don't show the examiner's rules to the reviewer, or the reviewer's rules to the 
    If it's `DIRTY`, the examiner rewrites the file and the reviewer checks it again.
 5. The implementer saves the description in `doc/` and implements from it.
 
+## Running the original program
+
+Nobody may run the original program or any part of it. The examiner inspects it statically only.
+Don't run it in an emulator or compatibility layer, or on a headless display either.
+
 ## Implementer rules
 
 Read a description only after its verdict is `CLEAN`. Never look at the original program, the examiner's working files or the

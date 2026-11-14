@@ -62,6 +62,7 @@ Use the non-interactive mode of the chosen harness. Run it in the role's work di
 
 ## Rules
 
+- Never run the original program or any part of it, and don't let a session do it. Inspection is static only.
 - The scripts refuse to use a directory inside the repository.
 - Each work directory gets only the rules of its own role. Never copy the other role's rules into it.
 - Don't put the description or its contents into the examiner's brief.

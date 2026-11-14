@@ -31,13 +31,22 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Backwards compatibility is almost completely irrelevant here
     - Might be easier to leverage multiplayer code for this
 - Skeletal animation code needs work
-    - Attachments (weapons) are still wrong. Apply the rule from `doc/animation_behaviour.md`.
-    - Animations should follow the channel tree and its propagation flag. Currently they start on the whole subtree.
+    - Attachments (weapons) are still wrong. The rule in `doc/attachment_behaviour.md` is not implemented yet.
+      Applying it literally to our matrices put the spears upside down. The conventions of our matrices differ from the description.
+      To fix this, compare the same cutscene moment across variants (the cutscene timing differs between runs).
+      The animated chain matrix already holds the hand's position, and the current code adds the bind matrix on top. That is probably the offset.
+    - Animations should follow the channel tree and its propagation flag (`doc/animation_channels_behaviour.md`).
+      Currently they start on the whole joint subtree. Not implemented yet.
     - Transitions between animations should blend with the original curve (the sword jumps now).
     - Known glitches: Rynn spins in the air, one leg is missing, and she floats when crouching.
     - Needs support for inverse kinematics
     - Movements of skeleton need to apply to bounding data
     - ~~Needs support for multiple interpolation styles (mostly "no interpolation" for authentic Drakan animations)~~
+- Clean-room documents
+    - `doc/animation_behaviour.md` is marked DIRTY by the strict leak review (about 40 lines with layout notation, code-like
+      fragments and names). It is already in the pushed history. Have the examiner rewrite it, review it again and replace the file.
+      This means rewriting history and force-pushing the fork. Ask before doing that.
+    - Both examiner and reviewer must follow `doc/clean_room_process.md`. The examiner must not read the re-implementation.
 - STOMP sequences
     - Cutscenes play, including sounds, music, attachments and skipping.
     - Unknown message codes: 0, 15, 25 and 52.
@@ -80,6 +89,7 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Done: terrain with water vertices (type 49) isn't solid. The character swims when the water is at least 0.3 deep.
       It floats at the surface, plays the swim animations and moves with the class's swim speeds.
     - Done: diving (look down while swimming) and air. Air drains underwater and refills at the surface, using the class rates.
+    - The dive controls (look to dive), the wading depths and the dive speeds are our own guesses. The original's behavior is not verified.
     - Missing: the breath meter, drowning (the player is pulled to the surface at zero air, because there's no health yet),
       flowing water types and currents, the splash and underwater sounds, and the swim-to-run transition when leaving the water.
     - Missing in rendering: the water surface looks like a flat 80% transparent tint. The original draws two textures that scroll in

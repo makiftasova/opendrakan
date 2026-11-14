@@ -148,14 +148,28 @@ namespace odOsg
 
         auto segment = mMusicContainer->loadSegment(musicId);
 
+        // the worker thread streams music from the segment player, so we must not change it while the worker does that
+        std::lock_guard<std::mutex> lock(mWorkerMutex);
+
         mSegmentPlayer->setSegment(segment);
         mSegmentPlayer->play();
 
-        mMusicSource->play(0.0);
+        // music can be switched while it is playing (e.g. by cutscenes). the stream just continues with the new segment then
+        if(!mMusicSource->isPlaying())
+        {
+            mMusicSource->play(0.0);
+        }
     }
 
     void SoundSystem::stopMusic()
     {
+        if(mSegmentPlayer == nullptr)
+        {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(mWorkerMutex);
+
         mSegmentPlayer->pause();
     }
 

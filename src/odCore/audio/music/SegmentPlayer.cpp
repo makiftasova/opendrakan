@@ -243,7 +243,12 @@ namespace odAudio
 
         for(auto &instrument : band->getInstruments())
         {
-            mSynth.assignPreset(instrument.pChannel, 0, instrument.patch, instrument.dlsGuid);
+            // the patch is a packed DirectMusic patch value: bank select MSB (bits 16-22), LSB (bits 8-14) and program (bits 0-6).
+            //  banks in DLS files are numbered as (MSB << 8) | LSB
+            uint32_t program = instrument.patch & 0x7f;
+            uint32_t bank = (((instrument.patch >> 16) & 0x7f) << 8) | ((instrument.patch >> 8) & 0x7f);
+
+            mSynth.assignPreset(instrument.pChannel, bank, program, instrument.dlsGuid);
         }
     }
 }

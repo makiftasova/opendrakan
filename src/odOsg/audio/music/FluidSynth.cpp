@@ -7,13 +7,22 @@
 
 #include <odOsg/audio/music/FluidSynth.h>
 
+#include <algorithm>
+#include <cstdlib>
 #include <sstream>
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <vector>
+
+#include <unistd.h>
 
 #include <odCore/Logger.h>
 #include <odCore/Panic.h>
 
 #include <odCore/db/MusicContainer.h>
+
+#include <odOsg/audio/music/DlsTranscoder.h>
 
 namespace odOsg
 {
@@ -35,6 +44,17 @@ namespace odOsg
         void read(void *buf, int count)
         {
             mReader.read(reinterpret_cast<char*>(buf), count);
+        }
+
+        /**
+         * @brief Returns the complete DLS data of the record.
+         */
+        std::vector<char> readAll()
+        {
+            std::vector<char> data(mDataSize);
+            mReader.seek(mDataOffset);
+            mReader.read(data.data(), data.size());
+            return data;
         }
 
         void seek(long offset, int origin)
@@ -63,62 +83,6 @@ namespace odOsg
             return mReader.tell() - mDataOffset;
         }
 
-        static void *_dlsLoader_open(const char *filename)
-        {
-            if(filename[0] != '&')
-            {
-                Logger::error() << "Tried to load invalid DLS " << filename << " using the memory wrapper. Filename should be a pointer prefixed by &";
-                return nullptr;
-            }
-
-            Logger::debug() << "Opened DLS loader wrapper with filename " << filename;
-
-            void *ptr = nullptr;
-            std::istringstream ss(filename+1);
-            ss >> ptr;
-
-            if(ss.fail())
-            {
-                return nullptr;
-            }
-
-            return ptr;
-        }
-
-        static int _dlsLoader_read(void *buf, fluid_long_long_t count, void *handle)
-        {
-            if(handle == nullptr) return FLUID_FAILED;
-
-            DlsLoaderWrapper *loader = reinterpret_cast<DlsLoaderWrapper*>(handle);
-            loader->read(buf, count);
-
-            return FLUID_OK;
-        }
-
-        static int _dlsLoader_seek(void *handle, fluid_long_long_t offset, int origin)
-        {
-            if(handle == nullptr) return FLUID_FAILED;
-
-            DlsLoaderWrapper *loader = reinterpret_cast<DlsLoaderWrapper*>(handle);
-            loader->seek(offset, origin);
-
-            return FLUID_OK;
-        }
-
-        static int _dlsLoader_close(void *handle)
-        {
-            return FLUID_OK;
-        }
-
-        static fluid_long_long_t _dlsLoader_tell(void *handle)
-        {
-            if(handle == nullptr) return FLUID_FAILED;
-
-            DlsLoaderWrapper *loader = reinterpret_cast<DlsLoaderWrapper*>(handle);
-            return loader->tell();
-        }
-
-
     private:
 
         odDb::MusicContainer &mContainer;
@@ -136,6 +100,19 @@ namespace odOsg
         if(errorCode != FLUID_OK)
         {
             OD_PANIC() << errorMessage;
+        }
+    }
+
+
+    /**
+     * Live MIDI messages may legitimately be rejected by fluidsynth (e.g. a note off for a note that is not sounding
+     * anymore, or messages for a channel without a preset). That is no reason to bring down the game.
+     */
+    static void _midiMessageCheck(int errorCode, const char *errorMessage)
+    {
+        if(errorCode != FLUID_OK)
+        {
+            Logger::debug() << errorMessage;
         }
     }
 
@@ -168,58 +145,53 @@ namespace odOsg
 
         mSynth = new_fluid_synth(mSettings.getInstance());
         if(mSynth == nullptr) OD_PANIC() << "Failed to create fluid synth";
-
-        fluid_sfloader_t *sfloader = new_fluid_defsfloader(mSettings.getInstance()); // TODO: do I have to delete this? o.o
-        if(sfloader == nullptr) OD_PANIC() << "Failed to create fluid soundfont loader";
-        int result = fluid_sfloader_set_callbacks(sfloader,
-                                                  &DlsLoaderWrapper::_dlsLoader_open,
-                                                  &DlsLoaderWrapper::_dlsLoader_read,
-                                                  &DlsLoaderWrapper::_dlsLoader_seek,
-                                                  &DlsLoaderWrapper::_dlsLoader_tell,
-                                                  &DlsLoaderWrapper::_dlsLoader_close);
-        _errorCheck(result, "Failed to set soundfont loader callbacks");
-        fluid_synth_add_sfloader(mSynth, sfloader);
     }
 
     FluidSynth::~FluidSynth()
     {
         delete_fluid_synth(mSynth);
+
+        for(auto &path : mTempDlsFiles)
+        {
+            std::error_code ec;
+            std::filesystem::remove(path, ec);
+        }
     }
 
     void FluidSynth::noteOn(uint8_t channel, uint8_t note, uint8_t velocity)
     {
         int result = fluid_synth_noteon(mSynth, channel, note, velocity);
-        _errorCheck(result, "Failed to send noteon message");
+        _midiMessageCheck(result, "Fluidsynth rejected noteon message");
     }
 
     void FluidSynth::noteOff(uint8_t channel, uint8_t note)
     {
         int result = fluid_synth_noteoff(mSynth, channel, note);
-        _errorCheck(result, "Failed to send noteoff message");
+        _midiMessageCheck(result, "Fluidsynth rejected noteoff message");
     }
 
     void FluidSynth::pitchBend(uint8_t channel, uint16_t value)
     {
         int result = fluid_synth_pitch_bend(mSynth, channel, value);
-        _errorCheck(result, "Failed to send pitch bend message");
+        _midiMessageCheck(result, "Fluidsynth rejected pitch bend message");
     }
 
     void FluidSynth::controllerChange(uint8_t channel, uint8_t controller, uint8_t value)
     {
         int result = fluid_synth_cc(mSynth, channel, controller, value);
-        _errorCheck(result, "Failed to send controller change message");
+        _midiMessageCheck(result, "Fluidsynth rejected controller change message");
     }
 
     void FluidSynth::channelPressure(uint8_t channel, uint8_t value)
     {
         int result = fluid_synth_channel_pressure(mSynth, channel, value);
-        _errorCheck(result, "Failed to send channel pressure message");
+        _midiMessageCheck(result, "Fluidsynth rejected channel pressure message");
     }
 
     void FluidSynth::keyPressure(uint8_t channel, uint8_t key, uint8_t value)
     {
         int result = fluid_synth_key_pressure(mSynth, channel, key, value);
-        _errorCheck(result, "Failed to send key pressure message");
+        _midiMessageCheck(result, "Fluidsynth rejected key pressure message");
     }
 
     void FluidSynth::allNotesOff()
@@ -240,8 +212,18 @@ namespace odOsg
     void FluidSynth::assignPreset(uint8_t channel, uint32_t bank, uint32_t patch, const od::Guid &dlsGuid)
     {
         int sfId = _getOrLoadDls(dlsGuid);
+        if(sfId < 0)
+        {
+            return; // the DLS could not be loaded. nothing to select
+        }
 
         int result = fluid_synth_program_select(mSynth, channel, sfId, bank, patch);
+        if(result != FLUID_OK && bank != 0)
+        {
+            // fluidsynth exposes all presets of a DLS file as bank 0, regardless of the bank number in the file.
+            //  since every DLS is loaded as a soundfont of it's own, this is unambiguous
+            result = fluid_synth_program_select(mSynth, channel, sfId, 0, patch);
+        }
         _errorCheck(result, "Failed to select program");
     }
 
@@ -260,17 +242,42 @@ namespace odOsg
             OD_PANIC() << "No music container provided to FluidSynth when a DLS needed to be loaded";
         }
 
-        // beware: pretty bad pointer/string abuse. there is much that can go wrong here, but as I see it, fluidsynth
-        //         doesn't offer a better solution for this without forcing us into writing our own DLS loader
-
+        // fluidsynth's built-in DLS loader opens the file itself and doesn't go through custom loader callbacks
+        //  (as of fluidsynth 2.x), so we dump the DLS data from the music container into a temporary file.
+        // Drakan's DLS files contain MS ADPCM waves, which fluidsynth can't load, so we convert them to PCM first.
         DlsLoaderWrapper loaderWrapper(*mMusicContainer, dlsGuid);
+        std::vector<char> dlsData;
+        try
+        {
+            dlsData = DlsTranscoder::convertAdpcmToPcm(loaderWrapper.readAll());
 
-        std::ostringstream ss;
-        ss << '&' << static_cast<void*>(&loaderWrapper);
-        std::string str = ss.str();
+        }catch(const DlsError &e)
+        {
+            // a broken instrument bank must not take the whole game down. the music using it will just be silent
+            Logger::error() << "Can't use DLS " << dlsGuid << ": " << e.what();
+            mSoundFontIdMap.insert(std::make_pair(dlsGuid, -1));
+            return -1;
+        }
 
-        int sfId = fluid_synth_sfload(mSynth, str.c_str(), 0);
-        if(sfId == FLUID_FAILED) OD_PANIC() << "Failed to load DLS";
+        std::filesystem::path tempPath = std::filesystem::temp_directory_path() /
+                ("opendrakan_" + std::to_string(::getpid()) + "_" + std::to_string(mTempDlsFiles.size()) + ".dls");
+        {
+            std::ofstream out(tempPath, std::ios::binary);
+            out.write(dlsData.data(), dlsData.size());
+            if(!out)
+            {
+                OD_PANIC() << "Failed to write temporary DLS file " << tempPath;
+            }
+        }
+        mTempDlsFiles.push_back(tempPath);
+
+        int sfId = fluid_synth_sfload(mSynth, tempPath.c_str(), 0);
+        if(sfId == FLUID_FAILED)
+        {
+            Logger::error() << "FluidSynth failed to load DLS " << dlsGuid << ". The music using it will be silent";
+            mSoundFontIdMap.insert(std::make_pair(dlsGuid, -1));
+            return -1;
+        }
 
         mSoundFontIdMap.insert(std::make_pair(dlsGuid, sfId));
 

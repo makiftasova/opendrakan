@@ -9,6 +9,8 @@
 #define INCLUDE_ODOSG_AUDIO_MUSIC_FLUIDSYNTH_H_
 
 #include <map>
+#include <filesystem>
+#include <vector>
 
 #include <fluidsynth.h>
 
@@ -71,6 +73,7 @@ namespace odOsg
         fluid_synth_t *mSynth;
         odDb::MusicContainer *mMusicContainer;
         std::map<od::Guid, int> mSoundFontIdMap;
+        std::vector<std::filesystem::path> mTempDlsFiles;
 
     };
 

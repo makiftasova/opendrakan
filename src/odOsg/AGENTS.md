@@ -16,7 +16,7 @@ Implements the abstract interfaces from odCore; links `odCore` and `dragonRfl` (
 | `render/PhysicsDebugDrawer.cpp` | Draws Bullet debug lines (`-p` flag). |
 | `render/ShaderFactory.cpp` | Loads/compiles shaders from `resources/shader_src/` (copied next to the binary at build time). |
 | `audio/OpenAlContext.cpp`, `SoundSystem.cpp`, `Source.cpp`, `Buffer.cpp`, `StreamingSource.cpp` | OpenAL implementation of `odAudio` interfaces; streaming source used for music. |
-| `audio/music/FluidSynth.cpp` | MIDI/DLS synth via FluidSynth for DirectMusic segments; `DummySynth` (silent) and `StupidSineSynth` (debug) are fallbacks. |
+| `audio/music/FluidSynth.cpp`, `DlsTranscoder.cpp` | MIDI/DLS synth via FluidSynth (CMake option `USE_FLUIDSYNTH`, ON by default if found). Drakan's DLS files use MS ADPCM waves and 0-0 velocity ranges, so `DlsTranscoder` rewrites them (PCM waves, full velocity range) before FluidSynth loads them from a temp file. `DummySynth` (silent) and `StupidSineSynth` (debug) are fallbacks. |
 | `GlmAdapter.h`, `Constants.h` | GLM ↔ OSG vector/matrix conversion; shared constants. |
 
 Notes:

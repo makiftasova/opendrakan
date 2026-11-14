@@ -1,5 +1,5 @@
 
-option(USE_FLUIDSYNTH "Whether to use FluidSynth subsystem to render music. (might be broken)" OFF)
+option(USE_FLUIDSYNTH "Whether to use FluidSynth subsystem to render music. (disabled with a message if FluidSynth is not found)" ON)
 
 add_executable(odOsg "")
 
@@ -46,7 +46,7 @@ if(USE_FLUIDSYNTH)
         if(FLUID_FOUND)
             target_link_libraries(odOsg PRIVATE PkgConfig::FLUID)
             target_compile_definitions(odOsg PRIVATE USE_FLUIDSYNTH)
-            target_sources(odOsg PRIVATE "audio/music/FluidSynth.cpp")
+            target_sources(odOsg PRIVATE "audio/music/FluidSynth.cpp" "audio/music/DlsTranscoder.cpp")
         else()
             message("No FluidSynth found. Disabling music.")
         endif()

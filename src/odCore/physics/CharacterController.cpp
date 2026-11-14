@@ -29,6 +29,7 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
     static const float MIN_GROUND_NORMAL_Y = 0.5f;  // surfaces steeper than this can't be walked on
     static const float MAX_WALL_NORMAL_Y = 0.7f;    // surfaces flatter than this don't block horizontal movement
     static const float SKIN = 0.005f;               // distance to keep from walls
+    static const float WORLD_FLOOR = 0.0f;          // where the ground is if there is no terrain below (see doc/collision_behaviour.md)
     static const float SWIM_ENTER_DEPTH = 0.30f;    // water depth (over the ground) at which the character starts to swim
     static const float SWIM_EXIT_DEPTH = 0.22f;     // water depth below which it stops swimming. lower than the entry depth, so it doesn't flicker
     static const float SWIM_SUBMERSION = 0.30f;     // how far the feet are below the surface when swimming. the head stays out of the water
@@ -252,6 +253,15 @@ static const float GROUND_PROBE_HEIGHT = 0.25f; // height above the feet from wh
 	        mIsOnGround = false;
 	        mFallSpeed = std::min(mFallSpeed + GRAVITY*relTime, MAX_FALL_SPEED);
 	        newPosition.y -= mFallSpeed*relTime;
+
+	        // outside of all terrain, the original treats the ground as being at height 0. a character that has fallen off the edge of the
+	        //  world lands there instead of falling forever
+	        if(newPosition.y - mFootOffset <= WORLD_FLOOR)
+	        {
+	            newPosition.y = WORLD_FLOOR + mFootOffset;
+	            mIsOnGround = true;
+	            mFallSpeed = 0.0f;
+	        }
 	    }
 
 	    return newPosition;

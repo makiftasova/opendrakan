@@ -12,6 +12,7 @@ them when you learn something new about the original engine. Contributors add fi
 | `dragon_rfl_classtypes.txt` | All class types / editor fields of Drakan's `dragon.rfl`, grouped by category. Reference for `src/dragonRfl/classes`. |
 | `drakan_network_protocol.md` | Research on the *original* Drakan network protocol (UDP/TCP, GameSpy-style discovery). |
 | `net_protocol.md` | Draft of OpenDrakan's *own* protocol (ticks, asset refs, snapshots). Matches `odCore/net` + `state`. Initially incompatible with Drakan. |
+| `animation_behaviour.md` | Clean-room behaviour description of the original engine's skeletal animation (root translation flags, playback, transitions, attach). Written by a separate examiner session; implement from this text only. |
 | `lighting.md` | How Riot lighting works (baked layer light, blending, dynamic lights). Used by `Layer`, `Light`, physics light dispatch. |
 | `music.md` | DirectMusic data in `Music.rrc` (segments 0x1.., DLS 0x100.., volumes 0x1001..). |
 | `volume.md` | Notes on sound volume (millibel) scaling. |

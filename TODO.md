@@ -42,6 +42,8 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Cutscenes play, including sounds, music, attachments and skipping.
     - Unknown message codes: 0, 15, 25 and 52.
     - The bridge cutscene is missing the Wartok spears.
+    - The long spear in the peasant scene after the bridge is missing.
+    - Doors and gates aren't rendered. The Wartoks break a gate in the opening cutscene, but nothing is visible.
     - Actor rotations should use the shortest-path slerp.
 - Renderer synchronization
     - Access synchronization to the rendering subsystem is inconsistently used or even absent in many cases. This needs a

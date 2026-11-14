@@ -6,6 +6,10 @@ This list contains all the features and details of OpenDrakan that still need to
 Feel free to pick an item and open a ticket for it should you wish to work on a feature.
 
 - Multiplayer
+    - Singleplayer already runs a server and a client in one process. Snapshots are sent every tick, and the client
+      adapts its interpolation delay to the observed snapshot spacing and jitter.
+    - Client-side prediction for the local player is missing. Movement waits for the server's reply.
+    - The server loop uses a variable step. A fixed 1/60 s step with an accumulator would be more deterministic.
     - Biggest hurdle to progress yet. Nearly all game logic should interact with this, so until this stands, progress with game logic is stalled
     - Protocol compatibility has low priority. If the original protocol is the source of bugs, or simply can't be reverse-engineered sufficiently, scratch it
     - Since handling multiplayer probably involves some incremental state tracking, this can probably be leveraged for easily implementing savegames
@@ -23,13 +27,22 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
         - Settings menu (pretty complex)
     - Main menu crystal buttons still look wrong (crystal motion and lighting)
 - Savegames
+    - Planned next, after the first gameplay section works.
     - Backwards compatibility is almost completely irrelevant here
     - Might be easier to leverage multiplayer code for this
 - Skeletal animation code needs work
+    - Attachments (weapons) are still wrong. Apply the rule from `doc/animation_behaviour.md`.
+    - Animations should follow the channel tree and its propagation flag. Currently they start on the whole subtree.
+    - Transitions between animations should blend with the original curve (the sword jumps now).
+    - Known glitches: Rynn spins in the air, one leg is missing, and she floats when crouching.
     - Needs support for inverse kinematics
     - Movements of skeleton need to apply to bounding data
     - ~~Needs support for multiple interpolation styles (mostly "no interpolation" for authentic Drakan animations)~~
 - STOMP sequences
+    - Cutscenes play, including sounds, music, attachments and skipping.
+    - Unknown message codes: 0, 15, 25 and 52.
+    - The bridge cutscene is missing the Wartok spears.
+    - Actor rotations should use the shortest-path slerp.
 - Renderer synchronization
     - Access synchronization to the rendering subsystem is inconsistently used or even absent in many cases. This needs a
       new efficient and effective concept.
@@ -50,17 +63,27 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - ~~A stronger association between objects and the layers they are "on" might be necessary~~
         - ~~Should consider objects that hang off the ceiling, too~~
 - DLS loading in music subsystem
-    - The FluidSynth based subsystem does not like Drakan's DLS files, also requires big dependency for DLS support
-    - Might want to try out a different synth altogether
+    - Music plays. ADPCM samples are transcoded to PCM before FluidSynth loads them.
+    - The FluidSynth dependency is big. Might want to try a different synth.
+    - Some notes sound wrong or play at once. Needs more work.
 - Character controllers
     - Character controlled by player
+        - First version works: gravity, ground following, walls and sliding. See `doc/collision_behaviour.md`.
+        - Missing: jumping, swimming, ladders, fall damage and tuned step height.
+        - Scenery whose class is not implemented has no collision.
     - Dragon controlled by player
     - Character controlled by AI
     - Dragon controlled by AI
+- Water
+    - Water layers are solid right now, so Rynn walks on top of the water.
+    - Stream classes are hidden. Swimming and water volumes are missing (needed for the caves under the Inn).
 - AI
 - SFX handling
     - If something needs to play SFX, right now that means it has to create it's own sound source. While this obviously works, it might
       be sub-optimal for performance. It'd be better to have a priority queue that distributes the SFX across a few sources.
+- Native Wayland window
+    - OSG 3.6 only supports X11 (GLX), so the game runs through Xwayland.
+    - A custom GLFW or SDL window would fix this.
 - Pure OpenGL (or even Vulkan) renderer
     - OSG is a pretty heavy dependency and we only use a small subset of it. A better, pure OpenGL renderer shouldn't be too hard to implement
         

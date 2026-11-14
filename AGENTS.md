@@ -1,9 +1,11 @@
 # AGENTS.md — OpenDrakan
 
 OpenDrakan is a C++17 reverse-engineered re-implementation of Surreal Software's **Riot Engine**
-(the engine behind *Drakan: Order of the Flame*). It is early-stage and cannot play the game yet.
+(the engine behind *Drakan: Order of the Flame*). It is early-stage. Playability is described with the [RPCS3 compatibility scale](https://rpcs3.net/compatibility)
+(Playable, In-game, Intro, Loadable, Nothing). Current status: **In-game**. The first section can be played, but it has serious
+glitches and the game can't be finished. Keep this status up to date in `README.md` and here.
 It needs the original game's data files (`Dragon.rrc`, `*.lvl`, `*.db`, ...) to run; none are in the repo.
-License: GPL-3.0. Upstream author is mostly solo; the README says a Rust rewrite was started.
+License: GPL-3.0. This is a fork of Zalasus/opendrakan (remote `upstream`).
 
 Nested `AGENTS.md` files exist in `src/odCore/`, `src/dragonRfl/`, `src/odOsg/` and `doc/`. Read the one for the area you touch.
 

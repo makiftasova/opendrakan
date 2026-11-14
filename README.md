@@ -2,22 +2,29 @@
 OpenDrakan
 ==========
 
-[![Build Status](https://travis-ci.org/Zalasus/opendrakan.svg?branch=master)](https://travis-ci.org/Zalasus/opendrakan)
-
-__Update 2022/01/05__: I realize that there hasn't been an update on this project for quite some time. This is mostly
-on me, with the world going crazy due to COVID, stuff in my life going wrong and my new job taking a toll on my
-time and motivation. That being said, this project is *not dead*. Most recently I started a full rewrite in Rust.
-I'm not sure if that'll lead me somewhere, but for now it keeps me coming back to OpenDrakan, and that's worth
-something, I guess.
-
 A project to reverse-engineer and recreate Surreal Software's Riot Engine with the ultimate goal to be
 able to run the game *Drakan: Order of the Flame* on a modern GNU/Linux system.
 
-__This project is still in an early stage__. Most things are still work-in-progress and the current state of
-the engine differs from the original game in a significant way. That means that you can't use this replacement 
-to play the game yet. Until that is the case, I'd recommend to check out the AiO patch or Community Patch, found 
-among other downloads on [Arokh's Lair](http://www.arokhslair.net/wp/downloads/). They fix some of the issues with the 
-original engine that might otherwise prevent you from playing on Wine.
+__This project is still in an early stage__. Most things are still work-in-progress, and the engine differs
+from the original game in significant ways.
+
+We describe how playable the game is with the scale from the
+[RPCS3 compatibility list](https://rpcs3.net/compatibility):
+
+| Status | Meaning |
+|---|---|
+| Playable | Can be completed with playable performance and no game-breaking glitches. |
+| In-game | Can't be finished, has serious glitches or has insufficient performance. |
+| Intro | Displays an image but doesn't get past the menus. |
+| Loadable | Displays a black screen. |
+| Nothing | Doesn't initialize properly, doesn't load or crashes. |
+
+Current status: **In-game**. New Game works and the first section (Ruined Village) can be played. Animations,
+weapons and water are still broken, and later sections don't work.
+
+Until the game is playable, check out the AiO patch or Community Patch, found among other downloads on
+[Arokh's Lair](http://www.arokhslair.net/wp/downloads/). They fix some issues of the original engine that might
+prevent you from playing on Wine.
 
 Contributions to the project are very welcome! Since I am mostly coding alone on OpenDrakan right now, I don't really
 have a collaborative workflow set up yet. But should more people be interested in contributing, I'd gladly change that.
@@ -66,7 +73,7 @@ $ make
 Running
 -------
 
-__This is only useful for developers at the moment. You can't use OpenDrakan to play the game yet!__
+__This is only useful for developers at the moment. The game isn't playable yet (status: In-game).__
 
 Run the *odOsg* executable in the root directory of the game (same directory that contains the Drakan.exe) to
 load the intro level. To load a specific level, run OpenDrakan with the path to the *.lvl file as an argument.

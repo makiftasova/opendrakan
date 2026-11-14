@@ -62,11 +62,14 @@ namespace odOsg
 
     void LightStateAttribute::clearLightList()
     {
+        std::lock_guard<std::mutex> lock(mMutex);
         mLights.clear();
     }
 
     void LightStateAttribute::addLight(std::shared_ptr<od::Light> light)
     {
+        std::lock_guard<std::mutex> lock(mMutex);
+
         // TODO: replace light if the new one fits better (like is closer or something)
         if(mLights.size() < mMaxLightCount)
         {
@@ -76,6 +79,8 @@ namespace odOsg
 
     void LightStateAttribute::removeLight(std::shared_ptr<od::Light> light)
     {
+        std::lock_guard<std::mutex> lock(mMutex);
+
         auto pred = [&light](std::weak_ptr<od::Light> &p){ return p.lock() == light; };
         auto it = std::find_if(mLights.begin(), mLights.end(), pred);
         if(it != mLights.end())
@@ -88,17 +93,30 @@ namespace odOsg
     {
         const osg::Matrix &viewMatrix = state.getInitialViewMatrix();
 
-        mRenderer.applyLayerLight(viewMatrix, mLayerLightDiffuse, mLayerLightAmbient, mLayerLightDirection);
+        // take a snapshot of the state, so the (client thread's) modifications can't interfere while we are applying it
+        osg::Vec3 layerDiffuse, layerAmbient, layerDirection;
+        std::vector<std::shared_ptr<od::Light>> lights;
+        {
+            std::lock_guard<std::mutex> lock(mMutex);
+
+            layerDiffuse = mLayerLightDiffuse;
+            layerAmbient = mLayerLightAmbient;
+            layerDirection = mLayerLightDirection;
+
+            lights.reserve(mLights.size());
+            for(auto &weakLight : mLights)
+            {
+                lights.push_back(weakLight.lock()); // null if the light is gone
+            }
+        }
+
+        mRenderer.applyLayerLight(viewMatrix, layerDiffuse, layerAmbient, layerDirection);
 
         for(size_t i = 0; i < mMaxLightCount; ++i)
         {
-            if(i < mLights.size() && !mLights[i].expired())
+            if(i < lights.size() && lights[i] != nullptr)
             {
-                auto light = mLights[i].lock();
-                if(light != nullptr)
-                {
-                    mRenderer.applyToLightUniform(viewMatrix, *light, i);
-                }
+                mRenderer.applyToLightUniform(viewMatrix, *lights[i], i);
 
             }else
             {

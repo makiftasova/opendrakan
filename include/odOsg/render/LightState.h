@@ -9,6 +9,7 @@
 #define INCLUDE_ODOSG_LIGHTSTATE_H_
 
 #include <vector>
+#include <mutex>
 #include <memory>
 
 #include <osg/Vec3>
@@ -45,6 +46,7 @@ namespace odOsg
 
         inline void setLayerLight(const osg::Vec3 &color, const osg::Vec3 &ambient, const osg::Vec3 &direction)
         {
+            std::lock_guard<std::mutex> lock(mMutex);
             mLayerLightDiffuse = color;
             mLayerLightAmbient = ambient;
             mLayerLightDirection = direction;
@@ -66,6 +68,8 @@ namespace odOsg
 
         Renderer &mRenderer;
         size_t mMaxLightCount;
+        // apply() is called from OSG's draw thread, while the light list is modified from the client thread
+        mutable std::mutex mMutex;
         std::vector<std::weak_ptr<od::Light>> mLights; // weak pointers so lights that get removed will stop being rendered
         osg::Vec3 mLayerLightDiffuse;
         osg::Vec3 mLayerLightAmbient;

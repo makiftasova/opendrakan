@@ -251,6 +251,13 @@ namespace od
                 {
                     Logger::info() << "Client resyncing (servertime=" << latestServerTime << " clienttime=" << clientTime << ")";
                     clientTime = latestServerTime - lerpTime;
+
+                }else if(latestServerTime > 0.0 && clientTime > latestServerTime)
+                {
+                    // we are ahead of the server (e.g. because it lost time while loading a level). there are no snapshots to interpolate towards
+                    //  then, so objects would only move whenever a snapshot arrives. go back to the time we are supposed to display
+                    Logger::info() << "Client resyncing, ahead of the server (servertime=" << latestServerTime << " clienttime=" << clientTime << ")";
+                    clientTime = latestServerTime - lerpTime;
                 }
 
                 mStateManager->apply(clientTime);

@@ -265,12 +265,15 @@ namespace od
             double relTime = 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(loopStart - lastUpdateStartTime).count();
             lastUpdateStartTime = loopStart;
 
-            // after a stall (like a slow tick right after loading a level) the simulation must not try to catch up in one huge step. this would e.g.
-            //  make cutscenes fire everything that was scripted during the stall at once. instead, the simulation just continues a little late.
-            relTime = std::min(relTime, MAX_UPDATE_STEP);
-
+            // the server's clock has to keep up with the real time. clients synchronize their own clock to it, and they can't interpolate
+            //  between snapshots if their clock runs ahead of the server's
             mServerTime += relTime;
             mEventQueue->setCurrentTime(mServerTime);
+
+            // after a stall (like a slow tick right after loading a level) the simulation must not try to catch up in one huge step. this would e.g.
+            //  make cutscenes fire everything that was scripted during the stall at once. instead, the simulation just continues a little late.
+            //  (it only affects the length of the simulation step, not the clock.)
+            relTime = std::min(relTime, MAX_UPDATE_STEP);
 
             if(mLevel != nullptr)
             {

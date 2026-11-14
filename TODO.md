@@ -82,7 +82,9 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Done: diving (look down while swimming) and air. Air drains underwater and refills at the surface, using the class rates.
     - Missing: the breath meter, drowning (the player is pulled to the surface at zero air, because there's no health yet),
       flowing water types and currents, the splash and underwater sounds, and the swim-to-run transition when leaving the water.
-    - Missing in rendering: scrolling water textures, the underwater tint and fog. Stream classes are still hidden.
+    - Missing in rendering: the water surface looks like a flat 80% transparent tint. The original draws two textures that scroll in
+      opposite directions. Find out which textures it uses. The terrain uses texture 8/270 for water. Also missing: the underwater tint and fog.
+      Stream classes are still hidden.
     - See `doc/water_behaviour.md`.
 - AI
 - SFX handling

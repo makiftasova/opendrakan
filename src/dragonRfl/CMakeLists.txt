@@ -1,11 +1,6 @@
 
 add_library(dragonRfl STATIC "")
 
-set_target_properties(dragonRfl PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO)
-
 target_sources(dragonRfl PRIVATE
     #"classes/common/ItemCommon.cpp"
     "classes/common/PlayerCommon.cpp"
@@ -41,4 +36,4 @@ target_sources(dragonRfl PRIVATE
     "Damage.cpp"
     "RflDragon.cpp")
 
-target_link_libraries(dragonRfl odCore)
+target_link_libraries(dragonRfl PUBLIC odCore)

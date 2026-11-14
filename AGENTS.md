@@ -13,10 +13,8 @@ Nested `AGENTS.md` files exist in `src/odCore/`, `src/dragonRfl/`, `src/odOsg/` 
 mkdir build && cd build && cmake .. && make -j"$(nproc)"
 ```
 
-- Deps: zlib, GLM, Bullet (core); OpenSceneGraph, OpenAL (+ FluidSynth for music) for the `odOsg` renderer.
-- CMake options: `BUILD_OSG_RENDERER` (default ON), `BUILD_CLASSSTAT` (ON), `BUILD_SRCSED` (ON).
-  - **Known bug:** the option is declared as `BUILD_SRCSED` but the `if()` tests `BUILD_SRSCED`
-    (see top-level `CMakeLists.txt`), so `srscEd` is only built with `-DBUILD_SRSCED=ON`.
+- Requires CMake >= 4.0 and C++17. Deps: zlib, GLM, Bullet (core); OpenSceneGraph, OpenAL (+ FluidSynth for music) for the `odOsg` renderer.
+- CMake options: `BUILD_OSG_RENDERER` (default ON), `BUILD_CLASSSTAT` (ON), `BUILD_SRSCED` (ON).
 - All binaries and static libs land in the top-level build dir. Shaders from `resources/shader_src/` are copied there.
 - `Version.h` is generated into `<build>/include/odCore/Version.h` from git (`GenerateVersion.cmake`, `Version.h.in`).
 - CI (`.travis.yml`) just runs cmake + make with g++ and clang++. **There are no automated tests.**

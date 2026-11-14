@@ -3,11 +3,6 @@
 
 add_library(odCore STATIC "")
 
-set_target_properties(odCore PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO)
-
 target_sources(odCore PRIVATE
         "anim/SequencePlayer.cpp"
         "anim/Skeleton.cpp"
@@ -98,24 +93,22 @@ add_dependencies(odCore GenerateVersion)
 target_include_directories(odCore PUBLIC ${VERSION_HEADER_INCLUDE_DIR})
 
 find_package(Threads REQUIRED)
-target_link_libraries(odCore ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(odCore PUBLIC Threads::Threads)
 if(CMAKE_USE_PTHREADS_INIT)
     target_compile_definitions(odCore PUBLIC USE_PTHREADS)
 endif()
 
 find_package(ZLIB REQUIRED)
-target_link_libraries(odCore ${ZLIB_LIBRARIES})
-target_include_directories(odCore PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(odCore PUBLIC ZLIB::ZLIB)
 
-find_package(Bullet 2.8.3 REQUIRED Collision LinearMath)
-target_link_libraries(odCore ${BULLET_LIBRARIES})
-target_include_directories(odCore PRIVATE ${BULLET_INCLUDE_DIRS})
+find_package(Bullet 2.8.3 REQUIRED)
+target_link_libraries(odCore PUBLIC ${BULLET_LIBRARIES})
+target_include_directories(odCore PUBLIC ${BULLET_INCLUDE_DIRS})
 
 # FIXME: making this required breaks the travis build on ubuntu xenial. for now we make it optional and display a warning if not found
-find_package(glm 0.9.8)
+find_package(glm 0.9.8 CONFIG)
 if(glm_FOUND)
-    target_link_libraries(odCore PUBLIC ${GLM_LIBRARY})
-    target_include_directories(odCore PUBLIC ${GLM_INCLUDE_DIRS})
+    target_link_libraries(odCore PUBLIC glm::glm)
     # since some glm versions (not necessarily older ones) require this:
     target_compile_definitions(odCore PUBLIC GLM_ENABLE_EXPERIMENTAL)
 else()

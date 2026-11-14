@@ -1,10 +1,14 @@
 
 
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 4.0)
 
 project(OpenDrakan CXX)
 
-option(BUILD_SRCSED "Build srscEd, a viewer for SRSC-files (useful for reverse-engineering)" ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+set(CMAKE_CXX_EXTENSIONS NO)
+
+option(BUILD_SRSCED "Build srscEd, a viewer for SRSC-files (useful for reverse-engineering)" ON)
 option(BUILD_CLASSSTAT "Build classStat, a tool for dumping .odb class data" ON)
 option(BUILD_OSG_RENDERER "Build the OpenSceneGraph-based renderer" ON)
 
@@ -21,16 +25,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
     endif()
-endif()
-
-# determine the flag we have to use to link a whole archive (used for linking RFLs)
-if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
-    set(WHOLE_ARCHIVE_START "-Wl,--whole-archive")
-    set(WHOLE_ARCHIVE_END   "-Wl,--no-whole-archive")
-endif()
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    set(WHOLE_ARCHIVE_START "/WHOLEARCHIVE")
-    set(WHOLE_ARCHIVE_END   "")
 endif()
 
 # make sure we get all binaries in the top level binary directory

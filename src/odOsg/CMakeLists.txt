@@ -3,11 +3,6 @@ option(USE_FLUIDSYNTH "Whether to use FluidSynth subsystem to render music. (mig
 
 add_executable(odOsg "")
 
-set_target_properties(odOsg PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO)
-
 target_sources(odOsg PRIVATE
     "audio/Buffer.cpp"
     "audio/OpenAlContext.cpp"
@@ -32,22 +27,23 @@ target_sources(odOsg PRIVATE
     "InputListener.cpp"
     "Main.cpp")
 
-target_link_libraries(odOsg odCore ${WHOLE_ARCHIVE_START} dragonRfl ${WHOLE_ARCHIVE_END})
+# the RFL registers its classes statically, so the whole archive has to be linked
+target_link_libraries(odOsg PRIVATE odCore "$<LINK_LIBRARY:WHOLE_ARCHIVE,dragonRfl>")
 
 find_package(OpenSceneGraph 3.4.0 REQUIRED osgDB osgViewer osgGA osgUtil)
-target_link_libraries(odOsg ${OPENSCENEGRAPH_LIBRARIES})
+target_link_libraries(odOsg PRIVATE ${OPENSCENEGRAPH_LIBRARIES})
+target_include_directories(odOsg PRIVATE ${OPENSCENEGRAPH_INCLUDE_DIRS})
 
 find_package(OpenAL REQUIRED)
-target_link_libraries(odOsg ${OPENAL_LIBRARY})
+target_link_libraries(odOsg PRIVATE OpenAL::OpenAL)
 
 if(USE_FLUIDSYNTH)
     # FluidSynth is only available as a module via PkgConfig as of 2.0.6
     find_package(PkgConfig)
-    if(PKGCONFIG_FOUND)
-        pkg_check_modules(FLUID fluidsynth)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(FLUID IMPORTED_TARGET fluidsynth)
         if(FLUID_FOUND)
-            target_link_libraries(odOsg ${FLUID_LIBRARIES})
-            target_include_directories(odOsg PRIVATE ${FLUID_INCLUDE_DIRS})
+            target_link_libraries(odOsg PRIVATE PkgConfig::FLUID)
             target_compile_definitions(odOsg PRIVATE USE_FLUIDSYNTH)
             target_sources(odOsg PRIVATE "audio/music/FluidSynth.cpp")
         else()

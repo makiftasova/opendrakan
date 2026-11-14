@@ -7,6 +7,8 @@
 
 #include <dragonRfl/classes/HumanControl.h>
 
+#include <dragonRfl/RflDragon.h>
+
 #include <vector>
 
 #include <glm/gtc/constants.hpp>
@@ -107,9 +109,15 @@ namespace dragonRfl
                                        odAnim::BoneMode::NORMAL,
                                        odAnim::BoneMode::NORMAL }, 0);
 
+            // played through the object, so clients get to know about it (they play animations on their own skeletons)
             odAnim::AnimModes animModes;
             animModes.playbackType = odAnim::PlaybackType::LOOPING;
-            animPlayer->playAnimation(mFields.readyAnim.getAsset(), animModes);
+            auto readyAnim = mFields.readyAnim.getAsset();
+            if(readyAnim != nullptr)
+            {
+                Logger::verbose() << "Player starts out with animation '" << readyAnim->getName() << "'";
+                obj.playAnimation(readyAnim, animModes);
+            }
 
         }else
         {
@@ -247,9 +255,13 @@ namespace dragonRfl
         }
 
         auto animPlayer = getLevelObject().getSkeletonAnimationPlayer();
-        if(animPlayer != nullptr)
+        auto anim = animRef.getAsset();
+        if(animPlayer != nullptr && anim != nullptr)
         {
-            animPlayer->playAnimation(animRef.getAsset(), modes);
+            Logger::verbose() << "Player plays animation '" << anim->getName() << "'" << (looping ? " (looping)" : "");
+
+            // played through the object, so clients get to know about it (they play animations on their own skeletons)
+            getLevelObject().playAnimation(anim, modes);
             animPlayer->setBoneModes(modes.boneModes, 0);
             if(skipAheadTime > 0)
             {
@@ -327,6 +339,12 @@ namespace dragonRfl
     {
         if(action == Action::Look)
         {
+            // while the menu is open, the mouse is not for looking around
+            if(getRfl<DragonRfl>().isMenuMode())
+            {
+                return;
+            }
+
             // TODO: we have to mark this as a prediction, and have to shift the server side calculation so it roughly matches up
             //  with this state update
             glm::vec2 yawPitch = TrackingCamera_Cl::cursorPosToYawPitch(pos);

@@ -144,6 +144,12 @@ namespace dragonRfl
 
     void TrackingCamera_Cl::_mouseHandler(const glm::vec2 &pos)
     {
+        // while the menu is open, the mouse is not for looking around
+        if(getRfl<DragonRfl>().isMenuMode())
+        {
+            return;
+        }
+
         glm::vec2 yawPitch = TrackingCamera_Cl::cursorPosToYawPitch(pos);
         mYaw = yawPitch.x;
         mPitch = yawPitch.y;

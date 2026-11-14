@@ -74,6 +74,7 @@ namespace dragonRfl
             obj.despawn();
             auto newHumanControl = std::make_unique<HumanControl_Sv>(clientId);
             newHumanControl->setServer(localServer); // i kinda dislike having to do this manually
+            newHumanControl->setRfl(*this);
             obj.setRflClassInstance(std::move(newHumanControl));
             obj.spawn();
 
@@ -161,6 +162,7 @@ namespace dragonRfl
                     controlObject->despawn();
                     auto newControl = std::make_unique<HumanControl_Cl>();
                     newControl->setClient(localClient); // i kinda dislike having to do this manually
+                    newControl->setRfl(*this);
                     controlObject->setRflClassInstance(std::move(newControl));
                     controlObject->spawn();
                 }
@@ -194,6 +196,11 @@ namespace dragonRfl
         }
 
         mGui->setMenuMode(false);
+    }
+
+    bool DragonRfl::isMenuMode() const
+    {
+        return mGui != nullptr && mGui->isMenuMode();
     }
 
     void DragonRfl::setShowMenu(bool b)

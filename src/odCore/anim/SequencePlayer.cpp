@@ -12,6 +12,8 @@
 #include <odCore/state/EventQueue.h>
 
 #include <odCore/db/Sound.h>
+#include <odCore/db/Model.h>
+#include <odCore/db/SkeletonDefinition.h>
 
 #include <odCore/anim/SkeletonAnimationPlayer.h>
 #include <odCore/anim/BoneAccumulator.h>
@@ -348,6 +350,17 @@ namespace odAnim
             animModes.speed = a.speed;
             animModes.startTime = a.beginPlayAt + lateness*a.speed;
             animModes.transitionTime = a.transitionTime;
+
+            {
+                std::string channelName = "(whole skeleton)";
+                if(a.channelIndex >= 0 && mActor.actorObject->getModel() != nullptr && mActor.actorObject->getModel()->hasSkeleton())
+                {
+                    auto n = mActor.actorObject->getModel()->getSkeletonDefinition()->getChannelName(a.channelIndex);
+                    channelName = n.has_value() ? std::string(n.value()) : std::string("(no such channel)");
+                }
+                Logger::verbose() << "Sequence animation: object " << mActor.actorObjectId << " channel " << a.channelIndex << " '" << channelName << "' anim '" << a.animation->getName()
+                                  << "' t=" << mSequenceTime << " speed=" << a.speed << " transition=" << a.transitionTime << " flags=" << a.flags;
+            }
 
             mActor.actorObject->playAnimation(a.animation, animModes);
 

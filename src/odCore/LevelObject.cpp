@@ -8,6 +8,8 @@
 #include <odCore/LevelObject.h>
 
 #include <algorithm>
+#include <optional>
+#include <string_view>
 #include <cmath>
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -814,12 +816,16 @@ namespace od
 
         if(mSkeletonAnimationPlayer != nullptr)
         {
-            Logger::debug() << "Object " << getObjectId() << " playing animation " << anim->getName() << " on channel " << mSkeleton->getDefinition()->getChannelName(modes.channel).value()
+            // (channel -1 means the whole skeleton, which has no channel name)
+            auto channelName = (modes.channel >= 0) ? mSkeleton->getDefinition()->getChannelName(modes.channel) : std::optional<std::string_view>("(whole skeleton)");
+            Logger::debug() << "Object " << getObjectId() << " playing animation " << anim->getName() << " on channel " << channelName.value_or("(invalid channel)")
                              << " {" << _animModeToString(modes.boneModes[0]) << ", " << _animModeToString(modes.boneModes[1]) << ", " << _animModeToString(modes.boneModes[2]) << "}";
 
             mSkeletonAnimationPlayer->playAnimation(anim, modes);
 
-            if(modes.channel == 0)
+            // the root joint's translation handling (e.g. 'frame' mode, where the root motion moves the object instead of the mesh) is part
+            //  of the request for the root channel, as well as for the whole skeleton (which includes the root)
+            if(modes.channel <= 0)
             {
                 mSkeletonAnimationPlayer->setBoneModes(modes.boneModes, 0);
             }

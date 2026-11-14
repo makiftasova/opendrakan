@@ -50,6 +50,11 @@ namespace dragonRfl
         void setShowMenu(bool b);
 
         /**
+         * @brief Returns true if the menu is open (which means that the mouse is used for the menu and not for controlling the game).
+         */
+        bool isMenuMode() const;
+
+        /**
          * @brief Starts a new game by loading the first level (as specified by the interface database) on the local server.
          *
          * Can be called from any thread, but only after onGameStartup().

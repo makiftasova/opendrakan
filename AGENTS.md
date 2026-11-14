@@ -114,3 +114,6 @@ mkdir build && cd build && cmake .. && make -j"$(nproc)"
 - Several threads may exist (server, client, input); methods documented as "synchronized" are safe cross-thread, others are not.
   See `odCore/ThreadUtils.h`.
 - Never commit game assets or anything copyrighted by Surreal/Warner Bros.
+- Inspecting the original binaries needs the clean-room process in `doc/clean_room_process.md` (rules per role: `clean_room_examiner.md`, `clean_room_reviewer.md`).
+- Write commit messages as described in `doc/commit_messages.md`.
+- Write text in the style of the [Google developer documentation guide](https://developers.google.com/style): short sentences, short paragraphs.

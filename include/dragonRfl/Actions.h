@@ -67,6 +67,7 @@ namespace dragonRfl
 
         // these are our own, additional actions
         PhysicsDebug_Toggle,
+        Skip_Cutscene,
         Look
     };
 

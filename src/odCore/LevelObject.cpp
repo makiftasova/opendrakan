@@ -8,6 +8,10 @@
 #include <odCore/LevelObject.h>
 
 #include <algorithm>
+#include <cmath>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include <odCore/Client.h>
 #include <odCore/Server.h>
@@ -120,6 +124,9 @@ namespace od
     , mSpawnableClass(nullptr)
     , mRunObjectAi(true)
     , mEnableUpdate(false)
+    , mIsAttachedToChannel(false)
+    , mAttachTargetId(0)
+    , mAttachChannelIndex(0)
     {
         mStates.position = record.getPosition();
         mStates.rotation = record.getRotation();
@@ -291,13 +298,14 @@ namespace od
                 mRenderHandle->setVisible(newStates.visibility.get());
             }
 
-            if(mSpawnableClass != nullptr)
+            // states get applied again and again, even if they didn't change (e.g. snapshots from the server), so only tell the class about actual changes
+            if(mSpawnableClass != nullptr && newStates.visibility.get() != prevStates.visibility.get())
             {
                 mSpawnableClass->onVisibilityChanged(newStates.visibility.get());
             }
         }
 
-        if(newStates.running.hasValue())
+        if(newStates.running.hasValue() && newStates.running.get() != prevStates.running.get())
         {
             if(mSpawnableClass != nullptr)
             {
@@ -393,6 +401,11 @@ namespace od
 
     void LevelObject::update(float relTime)
     {
+        if(mIsAttachedToChannel)
+        {
+            _updateChannelAttachment();
+        }
+
         if(mSkeletonAnimationPlayer != nullptr)
         {
             bool rigNeedsFlattening = mSkeletonAnimationPlayer->update(relTime);
@@ -434,12 +447,137 @@ namespace od
 
     void LevelObject::attachToChannel(LevelObject *target, size_t channelIndex, bool clearOffset)
     {
-        OD_UNIMPLEMENTED();
+        if(target == nullptr)
+        {
+            detach();
+            return;
+        }
+
+        // TODO: honor clearOffset=false, which should keep the offset between this and the channel. for now, we always move to the channel
+        attachToChannelUntracked(target, channelIndex);
+
+        if(mIsAttachedToChannel)
+        {
+            odState::ObjectAttachEvent attachEvent(getObjectId(), target->getObjectId(), static_cast<uint32_t>(channelIndex));
+            mLevel.getEngine().getEventQueue().logEvent(attachEvent);
+        }
+    }
+
+    void LevelObject::attachToChannelUntracked(LevelObject *target, size_t channelIndex)
+    {
+        if(target == nullptr)
+        {
+            detachUntracked();
+            return;
+        }
+
+        if(target == this)
+        {
+            OD_PANIC() << "Tried to attach object to itself";
+        }
+
+        if(target->mSkeleton == nullptr && target->mModel != nullptr)
+        {
+            target->setupSkeleton();
+        }
+
+        if(target->mSkeleton == nullptr || !target->mSkeleton->getDefinition()->getJointIndexForChannelIndex(channelIndex).has_value())
+        {
+            Logger::warn() << "Can't attach object " << getObjectId() << " to channel " << channelIndex << " of object " << target->getObjectId()
+                           << ": target has no skeleton or no such channel";
+            return;
+        }
+
+        mIsAttachedToChannel = true;
+        mAttachTargetId = target->getObjectId();
+        mAttachChannelIndex = channelIndex;
+
+        _updateChannelAttachment();
     }
 
     void LevelObject::detach()
     {
-        OD_UNIMPLEMENTED();
+        bool wasAttached = mIsAttachedToChannel;
+
+        detachUntracked();
+
+        if(wasAttached)
+        {
+            odState::ObjectAttachEvent detachEvent(getObjectId(), 0, 0);
+            mLevel.getEngine().getEventQueue().logEvent(detachEvent);
+        }
+    }
+
+    void LevelObject::detachUntracked()
+    {
+        // the object simply stays where it is
+        mIsAttachedToChannel = false;
+        mAttachTargetId = 0;
+    }
+
+    void LevelObject::_updateChannelAttachment()
+    {
+        auto target = mLevel.getLevelObjectById(mAttachTargetId);
+        if(target == nullptr || target->mSkeleton == nullptr)
+        {
+            // the target is gone
+            detachUntracked();
+            return;
+        }
+
+        auto definition = target->mSkeleton->getDefinition();
+        auto jointIndex = definition->getJointIndexForChannelIndex(mAttachChannelIndex);
+        if(!jointIndex.has_value())
+        {
+            detachUntracked();
+            return;
+        }
+
+        // bone matrices use the row vector convention, so the matrices are transposed here to column vector convention.
+        //
+        // the chain of animated joint transforms is the joint's pose, but it is an identity in the bind pose, so the channel's own matrix
+        //  (which holds the position and orientation of the channel's joint in the model) has to be added.
+        //  - position: the channel's position in the model, carried along by the animation.
+        //  - orientation: the animated rotation, combined with the channel's own orientation and a fixed half turn around the x axis.
+        //    (channel frames of some models are already turned upside down in the model data, and the half turn cancels that out for them.)
+        const glm::mat4 channelXform = glm::transpose(definition->getChannelXformA(mAttachChannelIndex));
+        const glm::mat4 chain = glm::transpose(target->mSkeleton->getBoneChainTransform(jointIndex.value()));
+
+        auto normalizedRotation = [](const glm::mat4 &m)
+        {
+            return glm::mat3(glm::normalize(glm::vec3(m[0])), glm::normalize(glm::vec3(m[1])), glm::normalize(glm::vec3(m[2])));
+        };
+
+        const glm::mat3 halfTurnAroundX(glm::vec3(1, 0, 0), glm::vec3(0, -1, 0), glm::vec3(0, 0, -1));
+        glm::mat3 jointRotation = normalizedRotation(chain) * normalizedRotation(channelXform) * halfTurnAroundX;
+        glm::vec3 jointPosition = glm::vec3(chain * glm::vec4(glm::vec3(channelXform[3]), 1.0f));
+
+        // the item is placed relative to the holder's position and rotation (the holder's scale is not applied)
+        glm::quat holderRotation = target->getRotation();
+        glm::mat3 itemRotation = glm::mat3_cast(holderRotation) * jointRotation;
+        glm::vec3 position = target->getPosition() + holderRotation * jointPosition;
+
+        glm::mat4 world(1.0f);
+        world[0] = glm::vec4(itemRotation[0], 0.0f);
+        world[1] = glm::vec4(itemRotation[1], 0.0f);
+        world[2] = glm::vec4(itemRotation[2], 0.0f);
+        world[3] = glm::vec4(position, 1.0f);
+
+        // degenerate poses (e.g. zero scale) must never leak into our transform states, as NaNs would spread to everything depending on them
+        auto isFinite = [](const glm::vec3 &v){ return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); };
+        if(!isFinite(glm::vec3(world[0])) || !isFinite(glm::vec3(world[1])) || !isFinite(glm::vec3(world[2])) || !isFinite(glm::vec3(world[3]))
+            || glm::length(glm::vec3(world[0])) < 1e-6f || glm::length(glm::vec3(world[1])) < 1e-6f || glm::length(glm::vec3(world[2])) < 1e-6f)
+        {
+            return;
+        }
+
+        glm::mat3 rotationPart(glm::normalize(glm::vec3(world[0])), glm::normalize(glm::vec3(world[1])), glm::normalize(glm::vec3(world[2])));
+        // attachments are not replicated. every side derives the item's transform from its own skeleton, so the item stays in sync with the joint
+        //  it is attached to. otherwise, the item would follow a (delayed) server side pose while the client plays the animation on its own clock.
+        od::ObjectStates states;
+        states.position = glm::vec3(world[3]);
+        states.rotation = glm::quat_cast(rotationPart);
+        setStatesUntracked(states);
     }
 
     void LevelObject::receiveMessage(LevelObject &sender, od::Message message)
@@ -618,7 +756,9 @@ namespace od
         auto finished = [](std::shared_ptr<odAudio::Source> &s){ return s->getState() == odAudio::Source::State::Stopped; };
         mSoundSources.erase(std::remove_if(mSoundSources.begin(), mSoundSources.end(), finished), mSoundSources.end());
 
-        Logger::verbose() << "Object " << getObjectId() << " playing sound '" << sound->getName() << "' with volume " << volume;
+        Logger::verbose() << "Object " << getObjectId() << " playing sound '" << sound->getName() << "' with volume " << volume
+                          << " (" << sound->getChannelCount() << "ch " << sound->getBitsPerChannel() << "bit " << sound->getSamplingFrequency() << "Hz, "
+                          << sound->getDataBuffer().size() << " bytes)";
 
         auto source = soundSystem.createSource();
         source->setPosition(getPosition());
@@ -744,6 +884,31 @@ namespace od
                 mObj.playSoundUntracked(*soundSystem, event.sound, event.volume);
             }
 
+            return true;
+        }
+
+        bool operator()(const odState::ObjectAttachEvent &event)
+        {
+            // the server has already carried out the attachment, so this is only for clients
+            if(!mObj.getLevel().getEngine().isClient())
+            {
+                return true;
+            }
+
+            if(event.targetObjectId == 0)
+            {
+                mObj.detachUntracked();
+                return true;
+            }
+
+            auto target = mObj.getLevel().getLevelObjectById(event.targetObjectId);
+            if(target == nullptr)
+            {
+                Logger::warn() << "Attach event refers to nonexistent target object " << event.targetObjectId;
+                return true;
+            }
+
+            mObj.attachToChannelUntracked(target.get(), event.channelIndex);
             return true;
         }
 

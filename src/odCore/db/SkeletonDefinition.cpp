@@ -86,6 +86,43 @@ namespace odDb
         }
     }
 
+    void SkeletonDefinition::setChannelXforms(size_t channelIndex, const glm::mat4 &xformA, const glm::mat4 &xformB)
+    {
+        if(mChannelXformsA.size() <= channelIndex)
+        {
+            mChannelXformsA.resize(channelIndex + 1, glm::mat4(1.0f));
+            mChannelXformsB.resize(channelIndex + 1, glm::mat4(1.0f));
+        }
+
+        mChannelXformsA[channelIndex] = xformA;
+        mChannelXformsB[channelIndex] = xformB;
+    }
+
+    const glm::mat4 &SkeletonDefinition::getChannelXformA(size_t channelIndex) const
+    {
+        static const glm::mat4 identity(1.0f);
+        return (channelIndex < mChannelXformsA.size()) ? mChannelXformsA[channelIndex] : identity;
+    }
+
+    const glm::mat4 &SkeletonDefinition::getChannelXformB(size_t channelIndex) const
+    {
+        static const glm::mat4 identity(1.0f);
+        return (channelIndex < mChannelXformsB.size()) ? mChannelXformsB[channelIndex] : identity;
+    }
+
+    glm::mat4 SkeletonDefinition::getJointBindTransform(size_t jointIndex) const
+    {
+        _checkFinalized();
+
+        if(jointIndex >= mJointInfos.size())
+        {
+            OD_PANIC() << "Joint index out of bounds: index=" << jointIndex << " size=" << mJointInfos.size();
+        }
+
+        // the stored matrix is the inverse of the joint's bind transform
+        return glm::inverse(mJointInfos[jointIndex].boneXform);
+    }
+
     std::optional<size_t> SkeletonDefinition::getJointIndexForChannelIndex(size_t channelIndex) const
     {
         _checkFinalized();

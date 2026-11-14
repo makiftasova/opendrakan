@@ -9,6 +9,7 @@
 #define INCLUDE_DRAGONRFL_RFLDRAGON_H_
 
 #include <memory>
+#include <set>
 
 #include <odCore/input/InputManager.h>
 
@@ -66,6 +67,7 @@ namespace dragonRfl
 
         LocalPlayer *mLocalPlayer;
         od::Server *mLocalServer;
+        std::set<odNet::ClientId> mClientsWithSkipBinding;
         od::Client *mLocalClient;
         std::unique_ptr<DragonGui> mGui;
 

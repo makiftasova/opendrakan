@@ -76,6 +76,8 @@ namespace dragonRfl
 
         od::LevelObject *mObjectToTrack;
 
+        bool mIsTracking;
+
         std::shared_ptr<odInput::InputListener> mInputListener;
 
         std::shared_ptr<odRender::Handle> mRenderHandle;

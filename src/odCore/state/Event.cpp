@@ -126,6 +126,28 @@ namespace odState
     }
 
 
+    ObjectAttachEvent::ObjectAttachEvent(od::LevelObjectId item, od::LevelObjectId target, uint32_t channel)
+    : itemObjectId(item)
+    , targetObjectId(target)
+    , channelIndex(channel)
+    {
+    }
+
+    ObjectAttachEvent::ObjectAttachEvent(od::DataReader &dr)
+    {
+        dr >> itemObjectId
+           >> targetObjectId
+           >> channelIndex;
+    }
+
+    void ObjectAttachEvent::serialize(od::DataWriter &dw) const
+    {
+        dw << itemObjectId
+           << targetObjectId
+           << channelIndex;
+    }
+
+
     MusicEvent::MusicEvent(uint32_t id, float fadeIn, float fadeOut)
     : musicId(id)
     , fadeInTime(fadeIn)

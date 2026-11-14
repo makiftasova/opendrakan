@@ -24,6 +24,7 @@ namespace odAnim
     : mSkeleton(skeleton)
     , mParent(nullptr)
     , mJointIndex(jointIndex)
+    , mCurrentMatrix(1.0f)
     {
     }
 
@@ -125,6 +126,19 @@ namespace odAnim
     Skeleton::Bone &Skeleton::getBoneByChannelIndex(int32_t channelIndex)
     {
         return mBones[mDefinition->getJointIndexForChannelIndex(channelIndex).value()];
+    }
+
+    glm::mat4 Skeleton::getBoneChainTransform(int32_t jointIndex)
+    {
+        Bone *bone = &getBoneByJointIndex(jointIndex);
+
+        glm::mat4 chain = bone->getCurrentTransform();
+        for(bone = bone->getParent(); bone != nullptr; bone = bone->getParent())
+        {
+            chain = chain * bone->getCurrentTransform();
+        }
+
+        return chain;
     }
 
     void Skeleton::flatten(odRender::Rig &rig)

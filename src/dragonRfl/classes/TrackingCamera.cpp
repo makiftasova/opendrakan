@@ -14,6 +14,8 @@
 #include <odCore/LevelObject.h>
 #include <odCore/Client.h>
 
+#include <odCore/audio/SoundSystem.h>
+
 #include <odCore/input/InputManager.h>
 #include <odCore/input/InputListener.h>
 
@@ -50,6 +52,7 @@ namespace dragonRfl
 
     TrackingCamera_Cl::TrackingCamera_Cl()
     : mObjectToTrack(nullptr)
+    , mIsTracking(false)
     {
     }
 
@@ -80,12 +83,17 @@ namespace dragonRfl
 
 	    obj.setEnableUpdate(true);
 
+        mIsTracking = true;
+
         mInputListener = getClient().getInputManager().createInputListener();
         mInputListener->setMouseMoveCallback([this](auto pos){ this->_mouseHandler(pos); });
     }
 
     void TrackingCamera_Cl::onStop()
     {
+        // while we are stopped, the camera is moved by someone else (e.g. a cutscene), so we show what they do
+        mIsTracking = false;
+
         mInputListener = nullptr;
     }
 
@@ -101,7 +109,12 @@ namespace dragonRfl
 
     void TrackingCamera_Cl::onTransformChanged()
     {
-        _updateCameraViewMatrix();
+        // while we are tracking an object, we determine the view ourselves. transforms that are applied from the outside (like the state the
+        //  server sent for this object, which is applied after our update) must not override it
+        if(!(mIsTracking && mObjectToTrack != nullptr))
+        {
+            _updateCameraViewMatrix();
+        }
 
         if(mRenderHandle != nullptr)
         {
@@ -175,6 +188,9 @@ namespace dragonRfl
         }
 
         getLevelObject().setPositionRotation(eye, lookDirectionQuat);
+
+        // set the view directly, so it's not dependent on the object's state, which may be reset by states from the server
+        _updateCameraViewMatrix();
     }
 
     void TrackingCamera_Cl::_updateCameraViewMatrix()
@@ -186,6 +202,14 @@ namespace dragonRfl
         glm::vec3 up = lookDirection * glm::vec3(0, 1, 0);
 
         getClient().getRenderer().getCamera()->lookAt(eyepoint, eyepoint + front, up);
+
+        // the listener follows the camera, so sounds are heard from where we are looking (e.g. during cutscenes)
+        odAudio::SoundSystem *soundSystem = getClient().getSoundSystem();
+        if(soundSystem != nullptr)
+        {
+            soundSystem->setListenerPosition(eyepoint);
+            soundSystem->setListenerOrientation(front, up);
+        }
     }
 
     void TrackingCamera_Cl::_setupCameraModel()

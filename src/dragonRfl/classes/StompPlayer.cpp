@@ -75,6 +75,14 @@ namespace dragonRfl
         }
     }
 
+    void StompPlayer_Sv::skipSequence()
+    {
+        if(mPlayer != nullptr)
+        {
+            mPlayer->skip();
+        }
+    }
+
     void StompPlayer_Sv::_playNextSequence()
     {
         int sequenceToPlay = -1;

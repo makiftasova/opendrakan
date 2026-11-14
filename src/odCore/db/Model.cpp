@@ -398,6 +398,7 @@ namespace odDb
                >> capCount;
 
             mSkeletonDefinition->markJointAsChannel(jointIndex, channelIndex);
+            mSkeletonDefinition->setChannelXforms(channelIndex, glm::mat4(xformA), glm::mat4(xformB));
 
             for(size_t capIndex = 0; capIndex < capCount; ++capIndex)
             {

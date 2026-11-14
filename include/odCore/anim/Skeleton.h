@@ -87,6 +87,13 @@ namespace odAnim
         Skeleton(const Skeleton &skeleton) = delete;
 
         inline size_t getBoneCount() const { return mBones.size(); }
+
+        /**
+         * @brief Returns the combined transform of the given joint and all its ancestors, in the same convention as is used for rig bone matrices.
+         *
+         * This is the transform that is applied to the bind pose of the joint (and everything weighted to it).
+         */
+        glm::mat4 getBoneChainTransform(int32_t jointIndex);
         inline std::shared_ptr<const odDb::SkeletonDefinition> getDefinition() const { return mDefinition; }
 
         Bone &addRootBone(int32_t jointIndex);

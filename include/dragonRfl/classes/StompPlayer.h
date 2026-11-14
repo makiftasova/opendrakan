@@ -56,6 +56,11 @@ namespace dragonRfl
         virtual void onMessageReceived(od::LevelObject &sender, od::Message message) override;
         virtual void onUpdate(float relTime) override;
 
+        /**
+         * @brief Skips to the end of the sequence that is currently playing, if any.
+         */
+        void skipSequence();
+
 
     private:
 

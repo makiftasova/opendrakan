@@ -220,6 +220,16 @@ namespace od
          */
         void detach();
 
+        /**
+         * @brief Same as attachToChannel(), but does not notify clients (used when executing attach events).
+         */
+        void attachToChannelUntracked(LevelObject *target, size_t channelIndex);
+
+        /**
+         * @brief Same as detach(), but does not notify clients (used when executing attach events).
+         */
+        void detachUntracked();
+
         void receiveMessage(LevelObject &sender, od::Message message);
         void receiveMessageWithoutDispatch(LevelObject &sender, od::Message message);
         void messageAllLinkedObjects(od::Message message);
@@ -244,6 +254,7 @@ namespace od
 
         void setupRenderingAndPhysics(ObjectRenderMode renderMode, ObjectPhysicsMode physicsMode);
         void setupSkeleton();
+        void _updateChannelAttachment();
 
         void playAnimation(std::shared_ptr<odDb::Animation> anim, const odAnim::AnimModes &modes);
         void playAnimationUntracked(std::shared_ptr<odDb::Animation> anim, const odAnim::AnimModes &modes);
@@ -295,6 +306,10 @@ namespace od
 
         bool mRunObjectAi;
         bool mEnableUpdate;
+
+        bool mIsAttachedToChannel;
+        LevelObjectId mAttachTargetId;
+        size_t mAttachChannelIndex;
 
         ObjectRenderMode mRenderMode;
         ObjectPhysicsMode mPhysicsMode;

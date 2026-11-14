@@ -100,8 +100,8 @@ namespace odDb
                 return odAnim::BoneMode::IGNORE;
 
             default:
-                Logger::warn() << "Invalid root node accumulation flag";
-                return odAnim::BoneMode::NORMAL;
+                // the value 3 is stored by the editor in some cases. the original engine treats it exactly like "None" (see doc/animation_behaviour.md)
+                return odAnim::BoneMode::IGNORE;
             }
         };
 

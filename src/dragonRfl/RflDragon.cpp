@@ -27,6 +27,9 @@
 #include <dragonRfl/Actions.h>
 #include <dragonRfl/gui/DragonGui.h>
 #include <dragonRfl/classes/HumanControl.h>
+#include <dragonRfl/classes/StompPlayer.h>
+
+#include <odCore/Downcast.h>
 
 namespace dragonRfl
 {
@@ -207,6 +210,47 @@ namespace dragonRfl
         {
             this->spawnHumanControlForPlayer(localServer, id);
         });
+
+        // let players skip cutscenes. the input managers of clients outlive levels, so we only have to do this once per client
+        localServer.forEachClient([this, &localServer](odNet::ClientId id)
+        {
+            if(!mClientsWithSkipBinding.insert(id).second)
+            {
+                return;
+            }
+
+            auto &skipAction = localServer.getInputManagerForClient(id).getAction(Action::Skip_Cutscene);
+            skipAction.setRepeatable(false);
+            skipAction.setIgnoreUpEvents(true);
+            skipAction.addCallback([&localServer](Action action, odInput::ActionState state)
+            {
+                auto level = localServer.getLevel();
+                if(level == nullptr)
+                {
+                    return;
+                }
+
+                // only in levels that have a player. the intro/menu level is driven by sequences that control the user interface and the music,
+                //  which do not cope with being skipped
+                std::vector<std::shared_ptr<od::LevelObject>> humanControls;
+                level->findObjectsOfType(HumanControl::classId(), humanControls);
+                if(humanControls.empty())
+                {
+                    return;
+                }
+
+                std::vector<std::shared_ptr<od::LevelObject>> stompPlayers;
+                level->findObjectsOfType(StompPlayer::classId(), stompPlayers);
+                for(auto &obj : stompPlayers)
+                {
+                    auto player = od::downcast<StompPlayer_Sv>(obj->getClassInstance());
+                    if(player != nullptr)
+                    {
+                        player->skipSequence();
+                    }
+                }
+            });
+        });
     }
 
     void DragonRfl::_bindActions(odInput::InputManager &im)
@@ -214,6 +258,7 @@ namespace dragonRfl
         // these actions stay hardcoded:
         im.bindAction(Action::Main_Menu,           odInput::Key::Escape);
         im.bindAction(Action::PhysicsDebug_Toggle, odInput::Key::F3);
+        im.bindAction(Action::Skip_Cutscene,       odInput::Key::Space);
 
         // later, these are to be read from the Drakan.cfg. For now, we hardcode them here for testing reasons
         im.bindAction(Action::Forward,          odInput::Key::W);

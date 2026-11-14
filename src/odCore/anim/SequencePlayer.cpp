@@ -56,6 +56,8 @@ namespace odAnim
     SequencePlayer::SequencePlayer(od::Level &level)
     : mLevel(level)
     , mSequenceTime(0.0)
+    , mSkipping(false)
+    , mFirstUpdate(true)
     , mPlaying(false)
     {
     }
@@ -135,6 +137,7 @@ namespace odAnim
 
         mSequence = sequence;
         mSequenceTime = 0.0;
+        mFirstUpdate = true;
 
         auto &actors = sequence->getActors();
         mActors.clear();
@@ -194,6 +197,8 @@ namespace odAnim
             }
         }
 
+        Logger::verbose() << "Sequence '" << mSequence->getName() << "' starts, run state modify style " << static_cast<int>(mSequence->getRunStateModifyStyle());
+
         if(mSequence->getRunStateModifyStyle() == odDb::ModifyRunStateStyle::STOP_ACTORS)
         {
             for(auto &actor : mActors)
@@ -240,6 +245,8 @@ namespace odAnim
         }
 
         mPlaying = false;
+
+        Logger::verbose() << "Sequence '" << mSequence->getName() << "' stops, restarting objects according to style " << static_cast<int>(mSequence->getRunStateModifyStyle());
 
         // restore previous accumulator if we created our own
         for(auto &pActor : mActors)
@@ -312,8 +319,11 @@ namespace odAnim
     {
     public:
 
-        NonTransformApplyVisitor(SequencePlayer::Actor &actor, float sequenceTime)
+        NonTransformApplyVisitor(SequencePlayer::Actor &actor, od::Level &level, const odDb::Sequence &sequence, float sequenceTime, bool skipping)
         : mActor(actor)
+        , mSkipping(skipping)
+        , mLevel(level)
+        , mSequence(sequence)
         , mSequenceTime(sequenceTime)
         {
         }
@@ -327,7 +337,8 @@ namespace odAnim
 
         void operator()(const PlayerActionStartAnim &a)
         {
-            //float dt = mSequenceTime - a.timeOffset;
+            // if we are late in starting this action, the animation resumes partway instead of restarting at its scripted offset
+            float lateness = std::max(0.0f, mSequenceTime - a.timeOffset);
             auto boneModes = a.getRootNodeTranslationModes();
 
             AnimModes animModes;
@@ -335,7 +346,7 @@ namespace odAnim
             animModes.boneModes = boneModes;
             animModes.channel = a.channelIndex;
             animModes.speed = a.speed;
-            animModes.startTime = a.beginPlayAt;
+            animModes.startTime = a.beginPlayAt + lateness*a.speed;
             animModes.transitionTime = a.transitionTime;
 
             mActor.actorObject->playAnimation(a.animation, animModes);
@@ -355,7 +366,7 @@ namespace odAnim
 
         void operator()(const PlayerActionPlaySound &a)
         {
-            if(a.sound == nullptr)
+            if(a.sound == nullptr || mSkipping)
             {
                 return;
             }
@@ -368,11 +379,35 @@ namespace odAnim
 
         void operator()(const odDb::ActionAttach &a)
         {
-            //float dt = mSequenceTime - a.timeOffset;
+            // the actor owning this action is the one carrying something. it names a channel (e.g. a weapon joint) and
+            //  another actor, who is attached to that channel. if the other actor is 0, whatever is attached gets detached.
+            Logger::verbose() << "Sequence '" << mSequence.getName() << "' t=" << mSequenceTime << ": actor object " << mActor.actorObjectId
+                              << (a.targetObjectId == 0 ? std::string(" detaches its item") : (" attaches actor " + std::to_string(a.targetObjectId)))
+                              << " (channel " << a.thisActorChannelId << ")";
+
+            if(a.targetObjectId == 0)
+            {
+                _detachFromActor();
+                return;
+            }
+
+            auto item = _getObjectForActorId(a.targetObjectId);
+            if(item == nullptr)
+            {
+                Logger::warn() << "Attach action in sequence refers to actor " << a.targetObjectId << ", which does not exist or has no object";
+                return;
+            }
+
+            mActor.attachedItemId = item->getObjectId();
+            item->attachToChannel(mActor.actorObject.get(), a.thisActorChannelId, true);
+
+            // items that are not implemented (yet) start out hidden, so show them now that they are being used
+            item->setVisible(true);
         }
 
         void operator()(const odDb::ActionRunStopAi &a)
         {
+            Logger::verbose() << "Sequence action: object " << mActor.actorObjectId << " run/stop AI = " << a.enableAi << " at t=" << mSequenceTime;
             mActor.actorObject->setRunning(a.enableAi);
         }
 
@@ -397,7 +432,37 @@ namespace odAnim
     private:
 
         SequencePlayer::Actor &mActor;
+        std::shared_ptr<od::LevelObject> _getObjectForActorId(uint32_t actorId)
+        {
+            for(auto &actor : mSequence.getActors())
+            {
+                if(actor.getActorId() == actorId)
+                {
+                    return mLevel.getLevelObjectById(actor.getLevelObjectId());
+                }
+            }
+
+            return nullptr;
+        }
+
+        void _detachFromActor()
+        {
+            if(mActor.attachedItemId != 0)
+            {
+                auto item = mLevel.getLevelObjectById(mActor.attachedItemId);
+                if(item != nullptr)
+                {
+                    item->detach();
+                }
+
+                mActor.attachedItemId = 0;
+            }
+        }
+
+        od::Level &mLevel;
+        const odDb::Sequence &mSequence;
         float mSequenceTime;
+        bool mSkipping;
 
     };
 
@@ -445,10 +510,12 @@ namespace odAnim
             {
                 // for non-transforms, we can't interpolate anything. here we simply search all events that happened since last time and apply them.
                 //  any missed time can be added by them as they see fit
-                NonTransformApplyVisitor visitor(actor, mSequenceTime);
+                NonTransformApplyVisitor visitor(actor, mLevel, *mSequence, mSequenceTime, mSkipping);
                 auto nonTfPredUpper = [](float t, PlayerActionVariant &action){ return t < odDb::Action::getTimeFromVariant(action); };
                 auto nonTfPredLower = [](PlayerActionVariant &action, float t){ return odDb::Action::getTimeFromVariant(action) < t; };
-                auto begin = std::lower_bound(actor.nonTransformActions.begin(), actor.nonTransformActions.end(), lastTime, nonTfPredLower);
+                // actions at exactly lastTime have been handled by the previous update (except at the very start, where nothing was handled yet)
+                auto begin = mFirstUpdate ? std::lower_bound(actor.nonTransformActions.begin(), actor.nonTransformActions.end(), lastTime, nonTfPredLower)
+                                          : std::upper_bound(actor.nonTransformActions.begin(), actor.nonTransformActions.end(), lastTime, nonTfPredUpper);
                 if(begin != actor.nonTransformActions.end())
                 {
                     // there are still events past the last processed point in time
@@ -466,12 +533,44 @@ namespace odAnim
             }
         }
 
+        mFirstUpdate = false;
+
         if(!sequenceRunning)
         {
             stop();
         }
 
         return sequenceRunning;
+    }
+
+    void SequencePlayer::skip()
+    {
+        if(!mPlaying || mSequence == nullptr)
+        {
+            return;
+        }
+
+        // find the time of the very last action
+        float endTime = mSequenceTime;
+        for(auto &actorIt : mActors)
+        {
+            auto &actor = actorIt.second;
+
+            if(!actor.transformActions.empty())
+            {
+                endTime = std::max(endTime, actor.transformActions.back().timeOffset);
+            }
+
+            if(!actor.nonTransformActions.empty())
+            {
+                endTime = std::max(endTime, odDb::Action::getTimeFromVariant(actor.nonTransformActions.back()));
+            }
+        }
+
+        // processing everything that happens until then in one go gives us the final state of everything
+        mSkipping = true;
+        update(endTime - mSequenceTime + 0.001f);
+        mSkipping = false;
     }
 
     void SequencePlayer::_applySingleKeyframe(Actor &actor, const odDb::ActionTransform &kf)

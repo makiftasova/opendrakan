@@ -112,6 +112,22 @@ namespace odState
 
 
     /**
+     * @brief Attaches an object to a channel of another object, or detaches it (if the target is 0).
+     */
+    struct ObjectAttachEvent final : public Event
+    {
+        ObjectAttachEvent(od::LevelObjectId item, od::LevelObjectId target, uint32_t channelIndex);
+        ObjectAttachEvent(od::DataReader &dr);
+
+        void serialize(od::DataWriter &dw) const;
+
+        od::LevelObjectId itemObjectId;
+        od::LevelObjectId targetObjectId; // 0 for detaching the item
+        uint32_t channelIndex;
+    };
+
+
+    /**
      * @brief Switches the background music. Only has an effect on clients.
      */
     struct MusicEvent final : public Event
@@ -134,7 +150,8 @@ namespace odState
                                       ObjectAnimEvent,
                                       ObjectMessageEvent,
                                       ObjectSoundEvent,
-                                      MusicEvent>;
+                                      MusicEvent,
+                                      ObjectAttachEvent>;
 
 
     struct EventVariantSerializer

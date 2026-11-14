@@ -49,6 +49,11 @@ namespace odState
             return _objectEvent(event, event.objectId);
         }
 
+        bool operator()(const ObjectAttachEvent &event)
+        {
+            return _objectEvent(event, event.itemObjectId);
+        }
+
         bool operator()(const MusicEvent &event)
         {
             auto &engine = mLevel.getEngine();
@@ -58,8 +63,17 @@ namespace odState
                 if(soundSystem != nullptr)
                 {
                     Logger::verbose() << "Switching music to " << event.musicId;
+
                     // TODO: fade times
-                    soundSystem->playMusic(event.musicId);
+                    if(event.musicId == 0)
+                    {
+                        // there is no music with ID 0. sequences use it to turn the music off
+                        soundSystem->stopMusic();
+
+                    }else
+                    {
+                        soundSystem->playMusic(event.musicId);
+                    }
                 }
             }
 

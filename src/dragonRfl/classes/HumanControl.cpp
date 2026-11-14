@@ -316,20 +316,7 @@ namespace dragonRfl
 
     void HumanControl_Cl::onTransformChanged()
     {
-        auto &obj = getLevelObject();
-
-        odAudio::SoundSystem *soundSystem = getClient().getSoundSystem();
-        if(soundSystem != nullptr)
-        {
-            glm::vec3 pos = obj.getPosition();
-
-            glm::quat lookDirection = obj.getRotation();
-            glm::vec3 at = lookDirection * glm::vec3(0, 0, -1);
-            glm::vec3 up = glm::vec3(0, 1, 0);
-
-            soundSystem->setListenerPosition(pos);
-            soundSystem->setListenerOrientation(at, up);
-        }
+        // note: the sound listener is moved by the tracking camera, as the player hears from where the camera is
     }
 
     void HumanControl_Cl::onUpdate(float relTime)

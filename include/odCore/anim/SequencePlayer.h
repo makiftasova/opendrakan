@@ -88,6 +88,13 @@ namespace odAnim
          */
         bool update(float relTime);
 
+        /**
+         * @brief Skips to the end of the sequence, applying everything that would have happened until then (final poses, visibility, messages...), but not playing sounds.
+         *
+         * Does nothing if the sequence is not playing.
+         */
+        void skip();
+
 
     private:
 
@@ -96,10 +103,13 @@ namespace odAnim
             Actor(od::LevelObjectId objId)
             : actorObjectId(objId)
             , lastAppliedKeyframe(nullptr)
+            , attachedItemId(0)
             {
             }
 
             od::LevelObjectId actorObjectId;
+
+            od::LevelObjectId attachedItemId; // the object this actor is currently carrying (via an attach action), or 0
 
             // Note: if the player is itself owned by an object, this pointer
             //  creates a reference cycle for as long as a sequence is playing.
@@ -129,6 +139,8 @@ namespace odAnim
 
         std::shared_ptr<odDb::Sequence> mSequence;
         float mSequenceTime;
+        bool mSkipping;
+        bool mFirstUpdate; // true until the first update after starting playback. needed to include actions at t=0 exactly once
 
         std::unordered_map<od::LevelObjectId, Actor> mActors;
 

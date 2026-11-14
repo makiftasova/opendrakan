@@ -7,6 +7,8 @@
 
 #include <odCore/Server.h>
 
+#include <algorithm>
+
 #include <thread>
 #include <chrono>
 
@@ -221,6 +223,9 @@ namespace od
         mRflManager.forEachLoadedRfl([this](odRfl::Rfl &rfl){ rfl.onLevelLoaded(*this); });
     }
 
+    // the longest time step (in seconds) the simulation takes in one go
+    static constexpr double MAX_UPDATE_STEP = 0.1;
+
     void Server::requestLoadLevel(const FilePath &path)
     {
         std::lock_guard<std::mutex> lock(mPendingLevelMutex);
@@ -259,6 +264,10 @@ namespace od
 
             double relTime = 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(loopStart - lastUpdateStartTime).count();
             lastUpdateStartTime = loopStart;
+
+            // after a stall (like a slow tick right after loading a level) the simulation must not try to catch up in one huge step. this would e.g.
+            //  make cutscenes fire everything that was scripted during the stall at once. instead, the simulation just continues a little late.
+            relTime = std::min(relTime, MAX_UPDATE_STEP);
 
             mServerTime += relTime;
             mEventQueue->setCurrentTime(mServerTime);

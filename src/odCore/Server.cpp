@@ -226,6 +226,18 @@ namespace od
     // the longest time step (in seconds) the simulation takes in one go
     static constexpr double MAX_UPDATE_STEP = 0.1;
 
+    void Server::setClientSnapshotInterval(odNet::ClientId clientId, odState::TickNumber ticks)
+    {
+        std::lock_guard<std::mutex> lock(mClientsMutex);
+        auto it = mClients.find(clientId);
+        if(it == mClients.end())
+        {
+            OD_PANIC() << "Unknown client ID " << clientId;
+        }
+
+        it->second->snapshotInterval = std::max<odState::TickNumber>(1, ticks);
+    }
+
     void Server::requestLoadLevel(const FilePath &path)
     {
         std::lock_guard<std::mutex> lock(mPendingLevelMutex);
@@ -317,8 +329,8 @@ namespace od
                         mStateManager->sendSnapshotToClient(latestTick, *client->downlinkConnector, client->lastAcknowledgedTick);
                     }
 
-                    // for now, send with fixed rate. later, we'd likely adapt the rate with which we send snapshots based on the client's network speed
-                    client->nextTickToSend = latestTick+3;
+                    // the rate is set per client (see setClientSnapshotInterval). later, we'd likely adapt the rate with which we send snapshots based on the client's network speed
+                    client->nextTickToSend = latestTick + client->snapshotInterval;
                 }
 
                 mEventQueue->sendEventsToClient(*client->downlinkConnector, mServerTime);
@@ -358,6 +370,7 @@ namespace od
 
     Server::ClientData::ClientData()
     : nextTickToSend(odState::FIRST_TICK)
+    , snapshotInterval(3)
     , lastAcknowledgedTick(odState::INVALID_TICK)
     , viewInterpolationTime(0.1) // TODO: use constant or communicate via handshake
     , lastMeasuredRoundTripTime(0.0)

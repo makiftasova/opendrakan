@@ -110,6 +110,14 @@ namespace od
         odNet::ClientId addClient();
 
         /**
+         * @brief Sets how many simulation ticks pass between two snapshots sent to a client (1 = every tick).
+         *
+         * Clients on the same machine or a fast LAN profit from a low value (less latency), clients on slow connections need a higher one.
+         * Synchronized with the server main loop.
+         */
+        void setClientSnapshotInterval(odNet::ClientId clientId, odState::TickNumber ticks);
+
+        /**
          * @brief Assigns a downlink connector to a client.
          *
          * The client must have already been added to the server via the addClient() method.
@@ -192,6 +200,7 @@ namespace od
             std::unique_ptr<odNet::DownlinkMessageDispatcher> messageDispatcher;
 
             odState::TickNumber nextTickToSend;
+            odState::TickNumber snapshotInterval;
 
             // for delta-encoding snapshots
             odState::TickNumber lastAcknowledgedTick;

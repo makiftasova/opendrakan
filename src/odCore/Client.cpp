@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <algorithm>
 
 #include <odCore/Level.h>
 #include <odCore/LevelObject.h>
@@ -216,8 +217,18 @@ namespace od
 
         Logger::info() << "Client set up. Starting render loop";
 
-        float lerpTime = 0.1;
-        float timeTolerance = 0.05;
+        // the client displays the world a little in the past, so it always has two snapshots to interpolate between. the delay adapts to
+        //  the observed spacing and arrival jitter of the snapshots: tiny on a local machine or LAN (a snapshot per tick), larger when
+        //  snapshots come in rarely or unevenly.
+        static constexpr double MIN_LERP_TIME = 0.03;
+        static constexpr double MAX_LERP_TIME = 0.25;
+        double lerpTime = 0.1;
+        double timeTolerance = 0.05;
+
+        double lastSeenServerTime = -1.0;
+        double lastArrivalClientTime = 0.0;
+        double spacingEma = 0.05;
+        double jitterEma = 0.01;
 
         double clientTime = 0;
         auto lastUpdateStartTime = std::chrono::high_resolution_clock::now();
@@ -247,6 +258,24 @@ namespace od
             {
                 // check if we are still in sync before advancing the world
                 double latestServerTime = mStateManager->getLatestRealtime();
+
+                if(latestServerTime != lastSeenServerTime)
+                {
+                    if(lastSeenServerTime >= 0.0 && latestServerTime > lastSeenServerTime)
+                    {
+                        double serverSpacing = latestServerTime - lastSeenServerTime;
+                        double arrivalSpacing = clientTime - lastArrivalClientTime;
+                        spacingEma += 0.1*(serverSpacing - spacingEma);
+                        jitterEma += 0.1*(std::abs(arrivalSpacing - serverSpacing) - jitterEma);
+
+                        double wanted = 1.5*spacingEma + 3*jitterEma;
+                        lerpTime = std::clamp(wanted, MIN_LERP_TIME, MAX_LERP_TIME);
+                        timeTolerance = std::max(0.03, lerpTime);
+                    }
+
+                    lastSeenServerTime = latestServerTime;
+                    lastArrivalClientTime = clientTime;
+                }
                 if(latestServerTime > clientTime + lerpTime + timeTolerance)
                 {
                     Logger::info() << "Client resyncing (servertime=" << latestServerTime << " clienttime=" << clientTime << ")";

@@ -215,6 +215,9 @@ int main(int argc, char **argv)
         server.setClientDownlinkConnector(clientId, client.getDownlinkConnector());
         client.setUplinkConnector(server.getUplinkConnectorForClient(clientId));
 
+        // client and server share a process. sending a snapshot per tick costs nothing and gives the lowest latency
+        server.setClientSnapshotInterval(clientId, 1);
+
     }else
     {
         localTunnel = std::make_unique<odNet::LocalTunnel>(client.getDownlinkConnector(), server.getUplinkConnectorForClient(clientId));

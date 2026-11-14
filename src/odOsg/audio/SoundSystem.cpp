@@ -56,6 +56,12 @@ namespace odOsg
         if(mWorkerThread.joinable()) mWorkerThread.join();
     }
 
+    void SoundSystem::setMasterVolume(float volume)
+    {
+        alListenerf(AL_GAIN, volume);
+        doErrorCheck("Could not set master volume");
+    }
+
     void SoundSystem::setListenerPosition(const glm::vec3 &pos)
     {
         alListener3f(AL_POSITION, pos.x, pos.y, pos.z);

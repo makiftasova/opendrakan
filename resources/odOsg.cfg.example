@@ -1,0 +1,18 @@
+# Example settings file for the odOsg executable.
+# Copy this to "odOsg.cfg" in the game's root directory (next to Dragon.rrc), or pass a path using -C.
+# All keys are optional. The values below are the defaults.
+
+[video]
+# Size of the window (ignored in fullscreen mode)
+width = 1280
+height = 720
+# 1 = fullscreen on the selected screen, 0 = window
+fullscreen = 0
+# Index of the screen to open the window on (0 = first screen)
+screen = 0
+# Horizontal field of view of the 3D camera in degrees (the original game uses 90). Can be overridden by -f
+fov = 90
+
+[audio]
+# Master volume, 0.0 (silent) to 1.0 (full)
+master_volume = 1.0

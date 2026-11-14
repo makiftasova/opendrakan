@@ -25,6 +25,7 @@ target_sources(odOsg PRIVATE
     "render/ShaderFactory.cpp"
     "render/Texture.cpp"
     "InputListener.cpp"
+    "Settings.cpp"
     "Main.cpp")
 
 # the RFL registers its classes statically, so the whole archive has to be linked

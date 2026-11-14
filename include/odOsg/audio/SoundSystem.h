@@ -44,6 +44,11 @@ namespace odOsg
 
         inline OpenAlContext &getContext() { return mContext; }
 
+        /**
+         * @brief Sets the master volume (0.0 = silent, 1.0 = full), affecting all sounds and music.
+         */
+        void setMasterVolume(float volume);
+
         virtual void setListenerPosition(const glm::vec3 &pos) override;
         virtual void setListenerOrientation(const glm::vec3 &at, const glm::vec3 &up) override;
         virtual void setListenerVelocity(const glm::vec3 &v) override;

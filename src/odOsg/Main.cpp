@@ -35,6 +35,7 @@
 #include <odOsg/render/Renderer.h>
 #include <odOsg/audio/SoundSystem.h>
 #include <odOsg/InputListener.h>
+#include <odOsg/Settings.h>
 
 static od::Server *sServer = nullptr;
 static od::Client *sClient = nullptr;
@@ -59,6 +60,8 @@ static void printUsage()
         << "    -h  Display this message and exit" << std::endl
         << "    -c  Use free look trackball view and ignore in-game camera controllers" << std::endl
         << "    -p  Force enable physics debug drawing" << std::endl
+        << "    -C <file>  Load settings from the given config file (default: odOsg.cfg in the game root)" << std::endl
+        << "    -f <degrees>  Set horizontal field of view of the 3D camera (default: 90)" << std::endl
         << "    -t  Use a simulated network tunnel to connect client and server" << std::endl
         << "    -d <drop rate>  Simulate packet drops (implies -t, range 0-1)" << std::endl
         << "    -l <min>:<max>  Simulate packet latency (implies -t, min/max are seconds)" << std::endl
@@ -102,7 +105,9 @@ int main(int argc, char **argv)
     float dropRate = 0;
     double latencyMin = 0;
     double latencyMax = 0;
-    while((c = getopt(argc, argv, "vhcptd:l:")) != -1)
+    double horizontalFov = 0;
+    std::string configPathOverride;
+    while((c = getopt(argc, argv, "vhcptd:l:f:C:")) != -1)
     {
         switch(c)
         {
@@ -120,6 +125,22 @@ int main(int argc, char **argv)
 
         case 'p':
             physicsDebug = true;
+            break;
+
+        case 'C':
+            configPathOverride = optarg;
+            break;
+
+        case 'f':
+            {
+                std::istringstream in(optarg);
+                in >> horizontalFov;
+                if(in.fail() || horizontalFov <= 0 || horizontalFov >= 180)
+                {
+                    std::cerr << "Invalid field of view. Must be in degrees, between 0 and 180 (exclusive)" << std::endl;
+                    return 1;
+                }
+            }
             break;
 
         case 't':
@@ -211,10 +232,31 @@ int main(int argc, char **argv)
         engineRoot = findEngineRoot(initialLevelOverride, "dragon.rrc");
     }
 
+    odOsg::Settings settings;
+    od::FilePath configPath = configPathOverride.empty() ? od::FilePath(odOsg::Settings::DEFAULT_FILE_NAME, engineRoot).adjustCase()
+                                                         : od::FilePath(configPathOverride);
+    if(settings.loadFromFile(configPath))
+    {
+        Logger::info() << "Loaded settings from " << configPath;
+
+    }else
+    {
+        if(!configPathOverride.empty())
+        {
+            std::cerr << "Could not open config file " << configPath << std::endl;
+            return 1;
+        }
+        Logger::info() << "No config file found at " << configPath << ". Using defaults";
+    }
+
     client.setEngineRootDir(engineRoot);
     server.setEngineRootDir(engineRoot);
 
     osgRenderer.setFreeLook(freeLook);
+    // command line options take precedence over the config file
+    osgRenderer.setHorizontalFov(horizontalFov > 0 ? horizontalFov : settings.horizontalFov);
+    osgRenderer.setWindowConfig(settings.windowWidth, settings.windowHeight, settings.fullscreen, settings.screen);
+    soundSystem.setMasterVolume(settings.masterVolume);
 
     std::unique_ptr<odOsg::InputListener> inputListener;
     // if we use freelook mode, the input listener should not consume it's input events so the trackball can handle them, too

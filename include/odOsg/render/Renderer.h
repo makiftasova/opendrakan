@@ -79,10 +79,30 @@ namespace odOsg
 
         void setFreeLook(bool f);
 
+        /**
+         * @brief Sets the horizontal field of view (in degrees) used for the 3D projection.
+         *
+         * The original engine keeps the horizontal field of view fixed (about 90 degrees) and derives the vertical one from the
+         * aspect ratio of the window, so we do the same.
+         */
+        void setHorizontalFov(double degrees);
+
+        /**
+         * @brief Configures the window that will be created by setup(). Has no effect after setup() was called.
+         *
+         * Without this, OSG would span a window across all connected screens.
+         *
+         * @param screen  Index of the screen to open the window on.
+         */
+        void setWindowConfig(int width, int height, bool fullscreen, int screen);
+
 
     private:
 
         void _setupGuiStuff();
+        void _stopViewer();
+        void _updateWindowSize();
+        void _updateProjection();
         osg::Group *_getOsgGroupForRenderSpace(odRender::RenderSpace space);
 
         std::shared_ptr<Model> _buildSingleLodModelNode(odDb::Model &model);
@@ -95,6 +115,14 @@ namespace odOsg
         std::shared_ptr<Camera> mCamera;
 
         bool mFreeLook;
+        double mHorizontalFov;
+        int mWindowWidth;
+        int mWindowHeight;
+        bool mFullscreen;
+        int mScreen;
+        int mLastWindowWidth;
+        int mLastWindowHeight;
+        double mAspectRatio;
 
         osg::ref_ptr<osgViewer::Viewer> mViewer;
         osg::ref_ptr<osgViewer::GraphicsWindow> mWindow;

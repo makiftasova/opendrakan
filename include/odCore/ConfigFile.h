@@ -52,6 +52,11 @@ namespace od
         template <typename T>
         T get(const std::string &section, const std::string &key, const T &defaultValue);
 
+        /**
+         * @brief Returns true if the given section exists (even if empty).
+         */
+        bool hasSection(const std::string &section) const { return mSections.find(section) != mSections.end(); }
+
         const std::vector<std::string> &getRawValuesInSection(const std::string &section);
 
 
@@ -75,7 +80,7 @@ namespace od
         T value;
         iss >> value;
 
-        if(iss.bad())
+        if(iss.fail())
         {
             OD_PANIC() << "Failed to parse key in config file: " << key;
         }
@@ -103,7 +108,7 @@ namespace od
         T value;
         iss >> value;
 
-        if(iss.bad())
+        if(iss.fail())
         {
             return defaultValue;
         }

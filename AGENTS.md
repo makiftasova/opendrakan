@@ -18,9 +18,11 @@ mkdir build && cd build && cmake .. && make -j"$(nproc)"
 - All binaries and static libs land in the top-level build dir. Shaders from `resources/shader_src/` are copied there.
 - `Version.h` is generated into `<build>/include/odCore/Version.h` from git (`GenerateVersion.cmake`, `Version.h.in`).
 - CI (`.travis.yml`) just runs cmake + make with g++ and clang++. **There are no automated tests.**
-- Run: `odOsg [-v] [-c] [-p] [-t] [-d rate] [-l min:max] [level.lvl]` from the game root (the dir with `Dragon.rrc`; the
+- Run: `odOsg [-v] [-c] [-p] [-t] [-d rate] [-l min:max] [-f fov] [-C cfgfile] [level.lvl]` from the game root (the dir with `Dragon.rrc`; the
   engine also ascends from the level path to find it). No level argument loads the intro level.
   `-t/-d/-l` route client<->server through a simulated in-process network tunnel.
+- Settings (window size, fullscreen, screen, FOV, master volume) come from `odOsg.cfg` in the game root; see
+  `resources/odOsg.cfg.example`, `include/odOsg/Settings.h`. Command-line flags override the file.
 - `.gitignore`d `build/` may exist locally; do not commit it.
 
 ## High-level architecture

@@ -8,6 +8,8 @@
 
 #include <odOsg/render/Renderer.h>
 
+#include <cmath>
+
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/ViewerEventHandlers>
 
@@ -43,6 +45,14 @@ namespace odOsg
     : mShaderFactory("resources/shader_src")
     , mEventListener(nullptr)
     , mFreeLook(false)
+    , mHorizontalFov(90.0)
+    , mWindowWidth(1280)
+    , mWindowHeight(720)
+    , mFullscreen(false)
+    , mScreen(0)
+    , mLastWindowWidth(0)
+    , mLastWindowHeight(0)
+    , mAspectRatio(4.0/3.0)
     , mLightingEnabled(true)
     , mSimTime(0.0)
     {
@@ -94,9 +104,17 @@ namespace odOsg
 
     Renderer::~Renderer()
     {
+        // the draw thread accesses members of this class (e.g. light uniforms), so it has to be stopped before they get destroyed
+        _stopViewer();
+    }
+
+    void Renderer::_stopViewer()
+    {
         if(mViewer != nullptr)
         {
             mViewer->setDone(true);
+            mViewer->stopThreading();
+            mViewer = nullptr;
         }
     }
 
@@ -420,8 +438,26 @@ namespace odOsg
         return mCamera.get();
     }
 
+    void Renderer::setWindowConfig(int width, int height, bool fullscreen, int screen)
+    {
+        mWindowWidth = width;
+        mWindowHeight = height;
+        mFullscreen = fullscreen;
+        mScreen = screen;
+    }
+
     void Renderer::setup()
     {
+        // if we don't set up a window explicitly, OSG will create one spanning all screens
+        if(mFullscreen)
+        {
+            mViewer->setUpViewOnSingleScreen(mScreen);
+
+        }else
+        {
+            mViewer->setUpViewInWindow(100, 100, mWindowWidth, mWindowHeight, mScreen);
+        }
+
         mViewer->realize();
 
         osgViewer::Viewer::Windows windows;
@@ -436,25 +472,59 @@ namespace odOsg
             mWindow->setCursor(osgViewer::GraphicsWindow::NoCursor);
         }
 
+        _updateWindowSize();
+    }
+
+    void Renderer::_updateWindowSize()
+    {
+        if(mWindow == nullptr)
+        {
+            return;
+        }
+
         int x, y, width, height;
         mWindow->getWindowRectangle(x, y, width, height);
+        if(width <= 0 || height <= 0 || (width == mLastWindowWidth && height == mLastWindowHeight))
+        {
+            return;
+        }
+
+        mLastWindowWidth = width;
+        mLastWindowHeight = height;
 
         for(auto guiCallback : mGuiCallbacks)
         {
             guiCallback->onFramebufferResize({width, height});
         }
 
-        double aspect = static_cast<double>(width)/height;
-        mViewer->getCamera()->setProjectionMatrixAsPerspective(45, aspect, 1, 10000);
+        mAspectRatio = static_cast<double>(width)/height;
+        _updateProjection();
+    }
+
+    void Renderer::_updateProjection()
+    {
+        if(mViewer == nullptr || mViewer->getCamera() == nullptr)
+        {
+            return;
+        }
+
+        // the horizontal field of view is what is fixed. derive the vertical one from it
+        double horizontalRadians = mHorizontalFov * osg::PI / 180.0;
+        double verticalDegrees = 2.0 * std::atan(std::tan(horizontalRadians / 2.0) / mAspectRatio) * 180.0 / osg::PI;
+
+        mViewer->getCamera()->setProjectionMatrixAsPerspective(verticalDegrees, mAspectRatio, 1, 10000);
+    }
+
+    void Renderer::setHorizontalFov(double degrees)
+    {
+        mHorizontalFov = degrees;
+
+        _updateProjection();
     }
 
     void Renderer::shutdown()
     {
-        if(mViewer != nullptr)
-        {
-            mViewer->setDone(true);
-            mViewer = nullptr;
-        }
+        _stopViewer();
     }
 
     void Renderer::frame(float relTime)
@@ -470,6 +540,8 @@ namespace odOsg
         {
             guiCallback->onUpdate(relTime);
         }
+        _updateWindowSize(); // the window may have been resized by the user or the window manager
+
         mViewer->renderingTraversals();
     }
 

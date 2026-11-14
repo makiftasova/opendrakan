@@ -21,6 +21,14 @@ namespace od
         std::regex keyOnlyRegex("\\s*(.+)");
         std::regex commentRegex("\\s*(#.*)?");
 
+        auto trim = [](const std::string &str)
+        {
+            size_t first = str.find_first_not_of(" \t");
+            if(first == std::string::npos) return std::string();
+            size_t last = str.find_last_not_of(" \t");
+            return str.substr(first, last - first + 1);
+        };
+
         std::string line;
         Section *currentSection = &mSections[""];
         while(std::getline(in, line))
@@ -33,28 +41,22 @@ namespace od
 
             std::smatch results;
 
-            if(std::regex_match(line, results, sectionRegex))
+            // comments have to be checked first, as they would also match the key-only pattern
+            if(std::regex_match(line, results, commentRegex))
             {
-                currentSection = &mSections[results[1].str()];
+                continue;
 
-                Logger::error() << "Got section " << results[1].str();
+            }else if(std::regex_match(line, results, sectionRegex))
+            {
+                currentSection = &mSections[trim(results[1].str())];
 
             }else if(std::regex_match(line, results, keyValueRegex))
             {
-                currentSection->keyValueMap.insert(std::make_pair(results[1].str(), results[2].str()));
-
-                Logger::error() << "Got value " << results[1].str() << "=" << results[2].str();
+                currentSection->keyValueMap.insert(std::make_pair(results[1].str(), trim(results[2].str())));
 
             }else if(std::regex_match(line, results, keyOnlyRegex))
             {
-                currentSection->rawValueList.push_back(results[1].str());
-
-                Logger::error() << "Got key w/o value " << results[1].str() ;
-
-            }else if(std::regex_match(line, results, commentRegex))
-            {
-                Logger::error() << "Got comment";
-                continue;
+                currentSection->rawValueList.push_back(trim(results[1].str()));
 
             }else
             {

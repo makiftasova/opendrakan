@@ -1,20 +1,9 @@
 /*
  * DefaultObjectClass.h
- *
- *  Created on: Apr 2, 2019
- *      Author: zal
  */
 
 #ifndef INCLUDE_ODCORE_RFL_DEFAULTOBJECTCLASS_H_
 #define INCLUDE_ODCORE_RFL_DEFAULTOBJECTCLASS_H_
-
-#include <memory>
-
-#include <odCore/ObjectLightReceiver.h>
-
-#include <odCore/render/Handle.h>
-
-#include <odCore/physics/Handles.h>
 
 #include <odCore/rfl/Class.h>
 
@@ -22,77 +11,63 @@ namespace odRfl
 {
 
     /**
-     * A default class for level objects whose RFL class type could not be found in the RFL.
-     *
-     * This is a fallback that should only be used as long as OpenDrakan's RFL does not define all
-     * RFL classes. As soon as that is the case, not being able to locate an RFL class should warrant
-     * an exception or rejection of the class database.
+     * @brief A field bundle with no fields, for objects whose RFL class is not implemented.
      */
-    class DefaultObjectClass : public LevelObjectClassBase
+    class DefaultObjectFields final : public FieldBundle
     {
     public:
 
-        DefaultObjectClass();
-        virtual ~DefaultObjectClass();
-
-        virtual void probeFields(FieldProbe &probe) override;
-
-        virtual void onSpawned() override;
-        virtual void onDespawned() override;
-        virtual void onVisibilityChanged() override;
-        virtual void onLayerChanged(od::Layer *from, od::Layer *to) override;
-        virtual void onTransformChanged() override;
-
-        static std::unique_ptr<DefaultObjectClass> makeInstance();
-
-    protected:
-
-        std::shared_ptr<odRender::Handle> mRenderHandle;
-        std::shared_ptr<odPhysics::ObjectHandle> mPhysicsHandle;
-
-        std::unique_ptr<od::ObjectLightReceiver> mLightReceiver;
+        virtual void probeFields(FieldProbe &probe) override { }
 
     };
 
 
-    class DefaultServerObjectClass : public odRfl::LevelObjectClassBase
+    /**
+     * @brief Server side of the fallback class for level objects whose RFL class could not be found. Does nothing.
+     */
+    class DefaultObject_Sv final : public ServerClass, public SpawnableClass, public ClassImpl<DefaultObject_Sv>
     {
     public:
 
-        virtual void probeFields(FieldProbe &probe) override;
+        virtual FieldBundle &getFields() override { return mFields; }
+
+        virtual void onSpawned() override;
 
 
     private:
 
-        std::shared_ptr<odPhysics::ObjectHandle> mPhysicsHandle;
+        DefaultObjectFields mFields;
 
     };
 
 
-    class DefaultClientObjectClass : public odRfl::LevelObjectClassBase
+    /**
+     * @brief Client side of the fallback class for level objects whose RFL class could not be found.
+     *
+     * This is a fallback that should only be used as long as OpenDrakan's RFL does not define all RFL classes.
+     * It makes sure that objects which are only referenced by other things (like items used by cutscenes) exist.
+     * Since we can't tell items from objects that are never supposed to be seen (sound sources, triggers and other
+     * markers that are only visible in the editor), these objects start out hidden. Whatever uses them (e.g. a cutscene
+     * attaching an item to a character) has to make them visible. They don't have any physics, so they can't get in the way of anything.
+     */
+    class DefaultObject_Cl final : public ClientClass, public SpawnableClass, public ClassImpl<DefaultObject_Cl>
     {
     public:
 
-        virtual void probeFields(FieldProbe &probe) override;
+        virtual FieldBundle &getFields() override { return mFields; }
 
         virtual void onSpawned() override;
-        virtual void onDespawned() override;
-        virtual void onVisibilityChanged() override;
-
-        // assume default objects are static, so we don't need these:
-        //virtual void onLayerChanged(od::Layer *from, od::Layer *to) override;
-        //virtual void onTransformChanged() override;
 
 
     private:
 
-        std::shared_ptr<odRender::Handle> mRenderHandle;
-        std::shared_ptr<odPhysics::ObjectHandle> mPhysicsHandle;
-        std::unique_ptr<od::ObjectLightReceiver> mLightReceiver;
+        DefaultObjectFields mFields;
 
     };
+
+
+    using DefaultObjectClassFactory = DefaultClassFactory<DefaultObjectFields, DefaultObject_Cl, DefaultObject_Sv>;
 
 }
-
 
 #endif /* INCLUDE_ODCORE_RFL_DEFAULTOBJECTCLASS_H_ */

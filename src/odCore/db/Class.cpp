@@ -13,6 +13,7 @@
 #include <odCore/db/ClassFactory.h>
 #include <odCore/db/DependencyTable.h>
 
+#include <odCore/rfl/DefaultObjectClass.h>
 #include <odCore/rfl/Rfl.h>
 #include <odCore/rfl/RflManager.h>
 
@@ -51,8 +52,12 @@ namespace odDb
         odRfl::ClassFactory *factory = getRflClassFactory(engine.getRflManager());
         if(factory == nullptr)
         {
-            Logger::debug() << "Tried to instantiate class without valid RFL class. Ignoring call as class is probably uinimplemented";
-            return nullptr;
+            // the class is not implemented (yet). we still create a basic object, so objects that are merely visible (items, props,
+            //  things that only cutscenes refer to...) exist and can be rendered. they are not going to do anything, though.
+            Logger::debug() << "Instantiating default object class for unimplemented class '" << mClassName << "'";
+
+            odRfl::DefaultObjectClassFactory defaultFactory;
+            return defaultFactory.makeInstance(engine);
         }
 
     	Logger::debug() << "Instantiating class '" << mClassName << "' (" << std::hex << getAssetId() << std::dec << ")";

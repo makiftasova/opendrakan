@@ -51,7 +51,7 @@ target_sources(odCore PRIVATE
         "physics/PhysicsSystem.cpp"
         "render/Renderer.cpp"
         "rfl/ClassBuilderProbe.cpp"
-        #"rfl/DefaultObjectClass.cpp"
+        "rfl/DefaultObjectClass.cpp"
         "rfl/Field.cpp"
         "rfl/FieldLoaderProbe.cpp"
         "rfl/FieldProbe.cpp"

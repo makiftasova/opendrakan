@@ -33,6 +33,8 @@ namespace dragonRfl
 
     DragonRfl::DragonRfl()
     : mLocalPlayer(nullptr)
+    , mLocalServer(nullptr)
+    , mLocalClient(nullptr)
     {
     }
 
@@ -99,6 +101,10 @@ namespace dragonRfl
             localClient.getSoundSystem()->playMusic(1);
         }
 
+        mLocalServer = &localServer;
+        mLocalClient = &localClient;
+        mGui->setNewGameCallback([this](){ this->startNewGame(); });
+
         if(loadIntroLevel)
         {
             od::FilePath levelPath(mGui->getUserInterfaceProperties().introLevelFilename, localServer.getEngineRootDir());
@@ -157,6 +163,34 @@ namespace dragonRfl
                 }
             }
         });
+    }
+
+    void DragonRfl::startNewGame()
+    {
+        if(mGui == nullptr || mLocalServer == nullptr)
+        {
+            Logger::error() << "Can't start new game before the game has been started up";
+            return;
+        }
+
+        const std::string &firstLevel = mGui->getUserInterfaceProperties().firstLevelFilename;
+        if(firstLevel.empty())
+        {
+            Logger::error() << "Can't start new game: the interface database does not specify a first level";
+            return;
+        }
+
+        Logger::info() << "Starting new game with level " << firstLevel;
+        od::FilePath levelPath(firstLevel, mLocalServer->getEngineRootDir());
+        mLocalServer->requestLoadLevel(levelPath.adjustCase());
+
+        // the menu music should not keep playing over the game
+        if(mLocalClient != nullptr && mLocalClient->getSoundSystem() != nullptr)
+        {
+            mLocalClient->getSoundSystem()->stopMusic();
+        }
+
+        mGui->setMenuMode(false);
     }
 
     void DragonRfl::setShowMenu(bool b)

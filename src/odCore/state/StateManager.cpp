@@ -280,7 +280,8 @@ namespace odState
             discreteChangeCount += basicChangeCount + extraChangeCount;
         }
 
-        c.confirmSnapshot(tickToSend, toSend->realtime, discreteChangeCount, referenceSnapshot);
+        // if the reference snapshot is not available, we sent the snapshot undelta-encoded, so we must not claim otherwise
+        c.confirmSnapshot(tickToSend, toSend->realtime, discreteChangeCount, (reference != mSnapshots.end()) ? referenceSnapshot : INVALID_TICK);
     }
 
     StateManager::SnapshotIterator StateManager::_getSnapshot(TickNumber tick, std::deque<Snapshot> &snapshots, bool createIfNotFound)

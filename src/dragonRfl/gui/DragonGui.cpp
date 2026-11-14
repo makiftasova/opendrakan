@@ -161,6 +161,18 @@ namespace dragonRfl
         return std::move(quad);
     }
 
+    void DragonGui::requestNewGame()
+    {
+        if(mNewGameCallback)
+        {
+            mNewGameCallback();
+
+        }else
+        {
+            Logger::warn() << "New game requested, but nobody is listening";
+        }
+    }
+
     void DragonGui::onMenuModeChanged()
     {
         if(mMainMenu != nullptr)

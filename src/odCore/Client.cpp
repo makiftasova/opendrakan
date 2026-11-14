@@ -81,7 +81,9 @@ namespace od
 
             }else
             {
-                Logger::error() << "Server database table contains DB '" << path << "', which we have not loaded";
+                // since client and server may share a DbManager, this can happen legitimately when the server sends its
+                //  table after a level change: DBs of the previous level that have been unloaded in the meantime are still listed
+                Logger::verbose() << "Server database table contains DB '" << path << "', which we have not loaded (anymore)";
             }
         }
 

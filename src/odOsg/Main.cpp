@@ -60,6 +60,7 @@ static void printUsage()
         << "    -h  Display this message and exit" << std::endl
         << "    -c  Use free look trackball view and ignore in-game camera controllers" << std::endl
         << "    -p  Force enable physics debug drawing" << std::endl
+        << "    -n  Start a new game right away, skipping the main menu" << std::endl
         << "    -C <file>  Load settings from the given config file (default: odOsg.cfg in the game root)" << std::endl
         << "    -f <degrees>  Set horizontal field of view of the 3D camera (default: 90)" << std::endl
         << "    -t  Use a simulated network tunnel to connect client and server" << std::endl
@@ -107,7 +108,8 @@ int main(int argc, char **argv)
     double latencyMax = 0;
     double horizontalFov = 0;
     std::string configPathOverride;
-    while((c = getopt(argc, argv, "vhcptd:l:f:C:")) != -1)
+    bool startNewGame = false;
+    while((c = getopt(argc, argv, "vhcptnd:l:f:C:")) != -1)
     {
         switch(c)
         {
@@ -125,6 +127,10 @@ int main(int argc, char **argv)
 
         case 'p':
             physicsDebug = true;
+            break;
+
+        case 'n':
+            startNewGame = true;
             break;
 
         case 'C':
@@ -269,6 +275,10 @@ int main(int argc, char **argv)
     if(hasInitialLevelOverride)
     {
         server.loadLevel(initialLevelOverride);
+
+    }else if(startNewGame)
+    {
+        static_cast<dragonRfl::DragonRfl&>(dragonRfl).startNewGame();
     }
 
     if(physicsDebug)

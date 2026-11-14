@@ -12,6 +12,7 @@
 #include <atomic>
 #include <unordered_map>
 #include <mutex>
+#include <optional>
 #include <vector>
 
 #include <odCore/FilePath.h>
@@ -166,6 +167,14 @@ namespace od
 
         void loadLevel(const FilePath &path);
 
+        /**
+         * @brief Asks the server to load a different level. Unlike loadLevel(), this can be called from any thread.
+         *
+         * The level is loaded by the server thread at the beginning of its next update cycle. Clients are told to load
+         * the new level as well, and the previous level is discarded.
+         */
+        void requestLoadLevel(const FilePath &path);
+
         void run();
 
 
@@ -205,6 +214,9 @@ namespace od
         FilePath mEngineRoot;
 
         std::atomic_bool mIsDone;
+
+        std::mutex mPendingLevelMutex;
+        std::optional<FilePath> mPendingLevelPath;
 
         odNet::ClientId mNextClientId;
         std::unordered_map<odNet::ClientId, std::unique_ptr<ClientData>> mClients;

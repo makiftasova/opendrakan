@@ -126,10 +126,14 @@ namespace dragonRfl
         default:
         case BC_MULTIPLAYER:
         case BC_LOAD:
-        case BC_NEW:
         case BC_SAVE:
         case BC_OPTIONS:
         case BC_CREDITS:
+            break;
+
+        case BC_NEW:
+            Logger::info() << "New game button clicked";
+            mDragonGui.requestNewGame();
             break;
 
         case BC_QUIT:

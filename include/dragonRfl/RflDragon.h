@@ -48,6 +48,13 @@ namespace dragonRfl
 
         void setShowMenu(bool b);
 
+        /**
+         * @brief Starts a new game by loading the first level (as specified by the interface database) on the local server.
+         *
+         * Can be called from any thread, but only after onGameStartup().
+         */
+        void startNewGame();
+
 
     private:
 
@@ -58,6 +65,8 @@ namespace dragonRfl
         void _registerClasses();
 
         LocalPlayer *mLocalPlayer;
+        od::Server *mLocalServer;
+        od::Client *mLocalClient;
         std::unique_ptr<DragonGui> mGui;
 
         std::shared_ptr<odNet::GlobalMessageListener<MessageChannel>> mControlCreationChannelListener;

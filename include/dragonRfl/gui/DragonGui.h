@@ -8,6 +8,7 @@
 #ifndef INCLUDE_DRAGONRFL_GUI_DRAGONGUI_H_
 #define INCLUDE_DRAGONRFL_GUI_DRAGONGUI_H_
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -69,6 +70,16 @@ namespace dragonRfl
 
         virtual void onMenuModeChanged() override;
 
+        /**
+         * @brief Sets the function to call when the player requests a new game via the main menu.
+         */
+        inline void setNewGameCallback(std::function<void()> callback) { mNewGameCallback = std::move(callback); }
+
+        /**
+         * @brief Called by the main menu when the player clicked "New Game".
+         */
+        void requestNewGame();
+
 
     private:
 
@@ -85,6 +96,7 @@ namespace dragonRfl
         std::unordered_map<od::RecordId, std::string> mLocalizedStringCache;
 
         std::shared_ptr<MainMenu> mMainMenu;
+        std::function<void()> mNewGameCallback;
     };
 
 }

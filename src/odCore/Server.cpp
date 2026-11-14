@@ -73,7 +73,9 @@ namespace od
 
         virtual void acknowledgeSnapshot(odState::TickNumber tick) override
         {
-            if(tick > mClient.lastAcknowledgedTick)
+            // ignore acks for ticks we have not even produced (yet). those can only come from before a level change
+            //  (the tick counter restarts with each level), so they are of no use as delta-encoding references
+            if(tick > mClient.lastAcknowledgedTick && mServer.mStateManager != nullptr && tick <= mServer.mStateManager->getLatestTick())
             {
                 mClient.lastAcknowledgedTick = tick;
             }
@@ -198,6 +200,10 @@ namespace od
 
         for(auto client : mTempClientUpdateList)
         {
+            // the new state manager starts counting ticks from the beginning, so per-client tick bookkeeping is void now
+            client->nextTickToSend = odState::FIRST_TICK;
+            client->lastAcknowledgedTick = odState::INVALID_TICK;
+
             if(client->downlinkConnector != nullptr)
             {
                 auto dbCount = mDbManager.getLoadedDatabaseCount();
@@ -215,6 +221,12 @@ namespace od
         mRflManager.forEachLoadedRfl([this](odRfl::Rfl &rfl){ rfl.onLevelLoaded(*this); });
     }
 
+    void Server::requestLoadLevel(const FilePath &path)
+    {
+        std::lock_guard<std::mutex> lock(mPendingLevelMutex);
+        mPendingLevelPath = path;
+    }
+
     void Server::run()
     {
         Logger::info() << "OpenDrakan server starting...";
@@ -228,6 +240,22 @@ namespace od
         while(!mIsDone.load(std::memory_order_relaxed))
         {
             auto loopStart = std::chrono::high_resolution_clock::now();
+
+            std::optional<FilePath> pendingLevelPath;
+            {
+                std::lock_guard<std::mutex> lock(mPendingLevelMutex);
+                pendingLevelPath.swap(mPendingLevelPath);
+            }
+
+            if(pendingLevelPath.has_value())
+            {
+                Logger::info() << "Server loading requested level " << pendingLevelPath.value();
+                loadLevel(pendingLevelPath.value());
+
+                // loading takes a while. don't make that look like one huge update step
+                loopStart = std::chrono::high_resolution_clock::now();
+                lastUpdateStartTime = loopStart;
+            }
 
             double relTime = 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(loopStart - lastUpdateStartTime).count();
             lastUpdateStartTime = loopStart;

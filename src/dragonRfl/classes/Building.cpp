@@ -77,6 +77,8 @@ namespace dragonRfl
 
     void Building_Sv::onSpawned()
 	{
+        // the server moves characters around, so it needs to know about the shape of buildings
+        getLevelObject().setupRenderingAndPhysics(od::ObjectRenderMode::NOT_RENDERED, od::ObjectPhysicsMode::SOLID);
 	}
 
     void Building_Sv::onDespawned()

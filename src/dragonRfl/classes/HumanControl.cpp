@@ -90,7 +90,9 @@ namespace dragonRfl
     	Logger::verbose() << "Spawned Human Control at "
     			<< obj.getPosition().x << "/"
 				<< obj.getPosition().y << "/"
-				<< obj.getPosition().z;
+				<< obj.getPosition().z
+                << " (bounding box " << obj.getBoundingBox().min().x << "/" << obj.getBoundingBox().min().y << "/" << obj.getBoundingBox().min().z
+                << " to " << obj.getBoundingBox().max().x << "/" << obj.getBoundingBox().max().y << "/" << obj.getBoundingBox().max().z << ")";
 
     	glm::vec3 playerLookDirection = glm::eulerAngles(obj.getRotation());
     	mPitch = playerLookDirection.x;
@@ -102,7 +104,7 @@ namespace dragonRfl
         auto animPlayer = obj.getSkeletonAnimationPlayer();
         if(animPlayer != nullptr)
         {
-            mCharacterController = std::make_shared<odPhysics::CharacterController>(getServer().getPhysicsSystem(), obj.getPhysicsHandle(), obj, 0.05, 0.3);
+            mCharacterController = std::make_shared<odPhysics::CharacterController>(getServer().getPhysicsSystem(), obj.getPhysicsHandle(), obj, 0.1, 0.4);
 
             animPlayer->setBoneAccumulator(mCharacterController, 0);
             animPlayer->setBoneModes({ odAnim::BoneMode::NORMAL,
@@ -174,6 +176,14 @@ namespace dragonRfl
         if(mCharacterController != nullptr)
         {
             mCharacterController->update(relTime);
+
+            mLogTimer += relTime;
+            if(mLogTimer > 2.0f)
+            {
+                mLogTimer = 0.0f;
+                auto pos = getLevelObject().getPosition();
+                Logger::verbose() << "Player at " << pos.x << " " << pos.y << " " << pos.z << (mCharacterController->isOnGround() ? " (on ground)" : " (in the air)");
+            }
         }
     }
 

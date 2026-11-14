@@ -10,6 +10,8 @@
 
 #include <memory>
 
+#include <glm/vec3.hpp>
+
 #include <odCore/anim/BoneAccumulator.h>
 
 namespace od
@@ -23,10 +25,20 @@ namespace odPhysics
 	class PhysicsSystem;
 	class ObjectHandle;
 
+	/**
+	 * @brief Moves a character through the world: applies the motion reported by animations, slides along walls, follows the ground
+	 *        (including steps up and down) and lets the character fall if there is no ground.
+	 *
+	 * This is a simple implementation based on ray tests. It treats the character as a vertical line with some radius.
+	 */
 	class CharacterController : public odAnim::BoneAccumulator
 	{
 	public:
 
+		/**
+		 * @param radius    Horizontal distance from the character's center at which obstacles start to block it.
+		 * @param height    Height of the character. Obstacles above the character's head are ignored.
+		 */
 		CharacterController(PhysicsSystem &physicsSystem, std::shared_ptr<ObjectHandle> handle, od::LevelObject &charObject, float radius, float height);
 
 		// implement odAnim::BoneAccumulator
@@ -34,24 +46,35 @@ namespace odPhysics
 
 		void update(float relTime);
 
+		inline bool isOnGround() const { return mIsOnGround; }
+
 
 	private:
 
-		bool _step(float stepHeight); // returns true if object was hit during stepping
+		glm::vec3 _moveHorizontally(const glm::vec3 &position, const glm::vec3 &movement);
+		glm::vec3 _followGround(const glm::vec3 &position, float relTime);
+
+		/**
+		 * @brief Finds how far the character can move in the given direction (a unit vector) before hitting a wall.
+		 *
+		 * @param feetY       Height of the character's feet.
+		 * @param hitNormal   Receives the normal of the surface hit, if any.
+		 * @return The distance that can be moved. This is at most the passed distance.
+		 */
+		float _findFreeDistance(const glm::vec3 &position, float feetY, const glm::vec3 &direction, float distance, glm::vec3 &hitNormal, bool &hitSomething);
 
         PhysicsSystem &mPhysicsSystem;
 		od::LevelObject &mCharObject;
 		std::shared_ptr<ObjectHandle> mObjectHandle;
-		glm::vec3 mCurrentPosition;
-		glm::vec3 mUp;
-		glm::vec3 mRelativeLowPoint;
-		glm::vec3 mRelativeHighPoint;
-		glm::vec3 mVelocity;
-		glm::vec3 mDesiredDirection;
-		glm::vec3 mDesiredPosition;
 
-		bool mIsFalling;
-		float mFallingVelocity;
+		float mRadius;
+		float mHeight;
+		float mFootOffset; // distance of the character object's origin above the feet
+
+		glm::vec3 mPendingMovement;
+
+		bool mIsOnGround;
+		float mFallSpeed;
 	};
 
 }

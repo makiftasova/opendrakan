@@ -68,6 +68,7 @@ namespace dragonRfl
         float mLastUpdatedYaw;
 
 		std::shared_ptr<odPhysics::CharacterController> mCharacterController;
+		float mLogTimer = 0.0f;
 	};
 
 

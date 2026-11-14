@@ -71,8 +71,6 @@ namespace odBulletPhysics
 
     btScalar ClosestRayCallback::addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace)
     {
-        m_closestHitFraction = rayResult.m_hitFraction;
-
         if(rayResult.m_collisionObject == nullptr)
         {
             OD_PANIC() << "Got nullptr as collision object";
@@ -83,6 +81,8 @@ namespace odBulletPhysics
             odPhysics::Handle *userPointerAsHandle = static_cast<odPhysics::Handle*>(rayResult.m_collisionObject->getUserPointer());
             if(mExclude.get() == userPointerAsHandle)
             {
+                // note: we must not touch m_closestHitFraction for objects we ignore. bullet uses it to shorten the ray, which
+                //  would hide everything behind an excluded object
                 return 1.0;
             }
         }

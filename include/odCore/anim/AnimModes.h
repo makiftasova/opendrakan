@@ -3,6 +3,7 @@
 #define INCLUDE_ODCORE_ANIM_ANIMMODES_H_
 
 #include <array>
+#include <cstdint>
 
 namespace odAnim
 {

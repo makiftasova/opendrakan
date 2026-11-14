@@ -2,6 +2,7 @@
 #ifndef INCLUDE_ODCORE_NET_PACKETPARSER_H_
 #define INCLUDE_ODCORE_NET_PACKETPARSER_H_
 
+#include <cstdint>
 #include <memory>
 
 namespace od

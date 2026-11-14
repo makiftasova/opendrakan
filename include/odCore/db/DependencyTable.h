@@ -2,6 +2,7 @@
 #ifndef INCLUDE_ODCORE_DB_DEPENDENCYTABLE_H_
 #define INCLUDE_ODCORE_DB_DEPENDENCYTABLE_H_
 
+#include <optional>
 #include <unordered_map>
 
 #include <odCore/db/AssetRef.h>

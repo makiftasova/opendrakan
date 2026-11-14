@@ -8,6 +8,7 @@
 #ifndef INCLUDE_ODCORE_RFL_CLASSBUILDERPROBE_H_
 #define INCLUDE_ODCORE_RFL_CLASSBUILDERPROBE_H_
 
+#include <cstdint>
 #include <vector>
 
 #include <odCore/rfl/FieldProbe.h>

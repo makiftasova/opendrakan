@@ -9,6 +9,7 @@
 #define INCLUDE_STRINGUTILS_H_
 
 #include <string>
+#include <cstdint>
 #include <vector>
 
 namespace od

@@ -1,4 +1,6 @@
 
+#include <algorithm>
+
 #include <odCore/state/EventQueue.h>
 
 #include <odCore/Level.h>

@@ -85,7 +85,7 @@ namespace odOsg
             return ptr;
         }
 
-        static int _dlsLoader_read(void *buf, int count, void *handle)
+        static int _dlsLoader_read(void *buf, fluid_long_long_t count, void *handle)
         {
             if(handle == nullptr) return FLUID_FAILED;
 
@@ -95,7 +95,7 @@ namespace odOsg
             return FLUID_OK;
         }
 
-        static int _dlsLoader_seek(void *handle, long offset, int origin)
+        static int _dlsLoader_seek(void *handle, fluid_long_long_t offset, int origin)
         {
             if(handle == nullptr) return FLUID_FAILED;
 
@@ -110,7 +110,7 @@ namespace odOsg
             return FLUID_OK;
         }
 
-        static long _dlsLoader_tell(void *handle)
+        static fluid_long_long_t _dlsLoader_tell(void *handle)
         {
             if(handle == nullptr) return FLUID_FAILED;
 

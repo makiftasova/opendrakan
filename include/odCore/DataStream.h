@@ -8,6 +8,8 @@
 #ifndef INCLUDE_DATASTREAM_H_
 #define INCLUDE_DATASTREAM_H_
 
+#include <array>
+#include <cstdint>
 #include <istream>
 #include <vector>
 

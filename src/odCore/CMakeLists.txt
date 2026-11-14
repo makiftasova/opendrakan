@@ -103,6 +103,19 @@ target_link_libraries(odCore PUBLIC ZLIB::ZLIB)
 
 find_package(Bullet 2.8.3 REQUIRED)
 target_link_libraries(odCore PUBLIC ${BULLET_LIBRARIES})
+
+# FindBullet doesn't tell us whether Bullet was built with double precision (e.g. Arch's bullet-dp package).
+# Headers and libraries have to agree on this, so ask Bullet's own config file, if there is one.
+function(od_detect_bullet_definitions outVar)
+    find_package(Bullet CONFIG QUIET)
+    set(${outVar} "${BULLET_DEFINITIONS}" PARENT_SCOPE)
+endfunction()
+od_detect_bullet_definitions(OD_BULLET_DEFINITIONS)
+if(OD_BULLET_DEFINITIONS)
+    message(STATUS "Using Bullet definitions: ${OD_BULLET_DEFINITIONS}")
+    string(REGEX REPLACE "(^|;)-D" "\\1" OD_BULLET_DEFINITIONS "${OD_BULLET_DEFINITIONS}")
+    target_compile_definitions(odCore PUBLIC ${OD_BULLET_DEFINITIONS})
+endif()
 target_include_directories(odCore PUBLIC ${BULLET_INCLUDE_DIRS})
 
 # FIXME: making this required breaks the travis build on ubuntu xenial. for now we make it optional and display a warning if not found

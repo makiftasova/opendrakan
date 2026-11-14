@@ -12,6 +12,7 @@
 #include <memory>
 
 #include <glm/gtx/norm.hpp> // needed due to missing include in glm/gtx/dual_quaternion.hpp, version 0.9.8.3-3
+#include <glm/gtx/quaternion.hpp> // length2(qua), needed by dual_quaternion.inl with glm >= 1.0
 #include <glm/gtx/dual_quaternion.hpp>
 
 #include <odCore/CTypes.h>

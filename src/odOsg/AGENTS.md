@@ -6,7 +6,7 @@ Implements the abstract interfaces from odCore; links `odCore` and `dragonRfl` (
 | File / dir | Purpose |
 |---|---|
 | `Main.cpp` | Program entry. Parses CLI flags, finds engine root (`Dragon.rrc`), constructs `DbManager`, `RflManager` (+`DragonRfl`), OSG `Renderer`, OpenAL `SoundSystem`, `InputListener`, Bullet physics, `Server` and `Client`; optionally inserts a `LocalTunnel`; runs server on its own thread, client on main; handles SIGINT. |
-| `Settings.cpp` | `odOsg::Settings`: loads `odOsg.cfg` (INI, via `od::ConfigFile`) — `[video]` width/height/fullscreen/screen/fov (horizontal, default 90 like the original game), `[audio]` master_volume. Add new options here + in `resources/odOsg.cfg.example`. |
+| `Settings.cpp` | `odOsg::Settings`: loads `odOsg.cfg` (INI, via `od::ConfigFile`) — `[video]` width/height/fullscreen/screen/fov (horizontal, default 90 like the original game), `[input]` grab_mouse (keeps the pointer inside the window, see `render/PointerGrab.cpp`; `-G` turns it off), `[audio]` master_volume. Add new options here + in `resources/odOsg.cfg.example`. |
 | `InputListener.cpp` | Translates OSG GUI events (keyboard/mouse) into `odInput::InputManager` calls. |
 | `render/Renderer.cpp` | `odRender::Renderer` impl: viewer/window, scene graph roots (world vs GUI render space), creating handles, loading shaders (`ShaderFactory`). |
 | `render/Model.cpp`, `ModelBuilder.cpp` | Build OSG geometry from `odDb::Model` data (vertices, UVs, bone weights, texture lookups). |

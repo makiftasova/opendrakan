@@ -28,6 +28,9 @@ namespace odOsg
         int screen = 0;             ///< Index of the screen to open the window on
         double horizontalFov = 90.0; ///< Horizontal field of view of the 3D camera in degrees (the vertical one follows from the window's aspect ratio)
 
+        // [input]
+        bool grabMouse = true;      ///< Keep the mouse pointer inside the window while it has the focus
+
         // [audio]
         float masterVolume = 1.0f;  ///< 0.0 (silent) to 1.0 (full volume)
 

@@ -7,6 +7,7 @@
 
 
 #include <odOsg/render/Renderer.h>
+#include <odOsg/render/PointerGrab.h>
 
 #include <cmath>
 
@@ -46,6 +47,9 @@ namespace odOsg
     , mEventListener(nullptr)
     , mFreeLook(false)
     , mHorizontalFov(90.0)
+    , mGrabMouse(false)
+    , mPointerGrabbed(false)
+    , mGrabCheckTimer(0.0f)
     , mWindowWidth(1280)
     , mWindowHeight(720)
     , mFullscreen(false)
@@ -110,6 +114,12 @@ namespace odOsg
 
     void Renderer::_stopViewer()
     {
+        if(mPointerGrabbed && mWindow != nullptr)
+        {
+            PointerGrab::setGrab(mWindow, false);
+            mPointerGrabbed = false;
+        }
+
         if(mViewer != nullptr)
         {
             mViewer->setDone(true);
@@ -527,9 +537,46 @@ namespace odOsg
         _stopViewer();
     }
 
+    void Renderer::setGrabMouse(bool grab)
+    {
+        mGrabMouse = grab;
+    }
+
+    void Renderer::_updatePointerGrab(float relTime)
+    {
+        // don't ask the window system on every frame
+        mGrabCheckTimer += relTime;
+        if(mGrabCheckTimer < 0.25f)
+        {
+            return;
+        }
+        mGrabCheckTimer = 0.0f;
+
+        if(mWindow == nullptr || mFreeLook || !PointerGrab::isSupported(mWindow))
+        {
+            return;
+        }
+
+        // we only keep the pointer while we have the focus, so we don't take it away from other windows
+        bool wantGrab = mGrabMouse && PointerGrab::hasFocus(mWindow);
+        if(wantGrab && !mPointerGrabbed)
+        {
+            mPointerGrabbed = PointerGrab::setGrab(mWindow, true);
+            Logger::verbose() << (mPointerGrabbed ? "Grabbed the mouse pointer" : "Could not grab the mouse pointer");
+
+        }else if(!wantGrab && mPointerGrabbed)
+        {
+            PointerGrab::setGrab(mWindow, false);
+            mPointerGrabbed = false;
+            Logger::verbose() << "Released the mouse pointer";
+        }
+    }
+
     void Renderer::frame(float relTime)
     {
         mSimTime += relTime;
+
+        _updatePointerGrab(relTime);
 
         // TODO: frame rate limiter ("timeUntilNextFrame" or smth)
 

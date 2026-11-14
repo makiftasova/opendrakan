@@ -60,6 +60,7 @@ static void printUsage()
         << "    -h  Display this message and exit" << std::endl
         << "    -c  Use free look trackball view and ignore in-game camera controllers" << std::endl
         << "    -p  Force enable physics debug drawing" << std::endl
+        << "    -G  Do not keep the mouse pointer inside the window" << std::endl
         << "    -n  Start a new game right away, skipping the main menu" << std::endl
         << "    -C <file>  Load settings from the given config file (default: odOsg.cfg in the game root)" << std::endl
         << "    -f <degrees>  Set horizontal field of view of the 3D camera (default: 90)" << std::endl
@@ -109,7 +110,8 @@ int main(int argc, char **argv)
     double horizontalFov = 0;
     std::string configPathOverride;
     bool startNewGame = false;
-    while((c = getopt(argc, argv, "vhcptnd:l:f:C:")) != -1)
+    bool disableMouseGrab = false;
+    while((c = getopt(argc, argv, "vhcptnGd:l:f:C:")) != -1)
     {
         switch(c)
         {
@@ -131,6 +133,10 @@ int main(int argc, char **argv)
 
         case 'n':
             startNewGame = true;
+            break;
+
+        case 'G':
+            disableMouseGrab = true;
             break;
 
         case 'C':
@@ -261,6 +267,7 @@ int main(int argc, char **argv)
     osgRenderer.setFreeLook(freeLook);
     // command line options take precedence over the config file
     osgRenderer.setHorizontalFov(horizontalFov > 0 ? horizontalFov : settings.horizontalFov);
+    osgRenderer.setGrabMouse(settings.grabMouse && !disableMouseGrab);
     osgRenderer.setWindowConfig(settings.windowWidth, settings.windowHeight, settings.fullscreen, settings.screen);
     soundSystem.setMasterVolume(settings.masterVolume);
 

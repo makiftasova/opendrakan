@@ -88,6 +88,11 @@ namespace odOsg
         void setHorizontalFov(double degrees);
 
         /**
+         * @brief Sets whether the mouse pointer should be kept inside the window while it has the focus.
+         */
+        void setGrabMouse(bool grab);
+
+        /**
          * @brief Configures the window that will be created by setup(). Has no effect after setup() was called.
          *
          * Without this, OSG would span a window across all connected screens.
@@ -102,6 +107,7 @@ namespace odOsg
         void _setupGuiStuff();
         void _stopViewer();
         void _updateWindowSize();
+        void _updatePointerGrab(float relTime);
         void _updateProjection();
         osg::Group *_getOsgGroupForRenderSpace(odRender::RenderSpace space);
 
@@ -116,6 +122,9 @@ namespace odOsg
 
         bool mFreeLook;
         double mHorizontalFov;
+        bool mGrabMouse;
+        bool mPointerGrabbed;
+        float mGrabCheckTimer;
         int mWindowWidth;
         int mWindowHeight;
         bool mFullscreen;

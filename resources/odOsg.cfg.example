@@ -13,6 +13,10 @@ screen = 0
 # Horizontal field of view of the 3D camera in degrees (the original game uses 90). Can be overridden by -f
 fov = 90
 
+[input]
+# 1 = keep the mouse pointer inside the game window while it has the focus (so you can't lose it while turning around), 0 = don't. Can be turned off with -G
+grab_mouse = 1
+
 [audio]
 # Master volume, 0.0 (silent) to 1.0 (full)
 master_volume = 1.0

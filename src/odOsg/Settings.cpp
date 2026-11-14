@@ -29,6 +29,8 @@ namespace odOsg
         screen       = cfg.get<int>("video", "screen", screen);
         horizontalFov = cfg.get<double>("video", "fov", horizontalFov);
 
+        grabMouse    = cfg.get<int>("input", "grab_mouse", grabMouse ? 1 : 0) != 0;
+
         masterVolume = cfg.get<float>("audio", "master_volume", masterVolume);
 
         sanitize();

@@ -25,6 +25,7 @@ target_sources(odOsg PRIVATE
     "render/ShaderFactory.cpp"
     "render/Texture.cpp"
     "InputListener.cpp"
+    "render/PointerGrab.cpp"
     "Settings.cpp"
     "Main.cpp")
 
@@ -34,6 +35,13 @@ target_link_libraries(odOsg PRIVATE odCore "$<LINK_LIBRARY:WHOLE_ARCHIVE,dragonR
 find_package(OpenSceneGraph 3.4.0 REQUIRED osgDB osgViewer osgGA osgUtil)
 target_link_libraries(odOsg PRIVATE ${OPENSCENEGRAPH_LIBRARIES})
 target_include_directories(odOsg PRIVATE ${OPENSCENEGRAPH_INCLUDE_DIRS})
+
+# used to keep the mouse pointer inside the window. optional
+find_package(X11)
+if(X11_FOUND)
+    target_link_libraries(odOsg PRIVATE X11::X11)
+    target_compile_definitions(odOsg PRIVATE OD_HAVE_X11)
+endif()
 
 find_package(OpenAL REQUIRED)
 target_link_libraries(odOsg PRIVATE OpenAL::OpenAL)

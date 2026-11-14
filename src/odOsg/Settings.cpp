@@ -30,6 +30,7 @@ namespace odOsg
         horizontalFov = cfg.get<double>("video", "fov", horizontalFov);
 
         grabMouse    = cfg.get<int>("input", "grab_mouse", grabMouse ? 1 : 0) != 0;
+        debugOverlay = cfg.get<int>("debug", "overlay", debugOverlay ? 1 : 0) != 0;
 
         masterVolume = cfg.get<float>("audio", "master_volume", masterVolume);
 

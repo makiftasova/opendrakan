@@ -7,10 +7,15 @@
 
 #include <dragonRfl/classes/TrackingCamera.h>
 
+#include <cstdio>
+#include <cmath>
+#include <string>
+
 #include <dragonRfl/RflDragon.h>
 #include <dragonRfl/LocalPlayer.h>
 
 #include <odCore/Level.h>
+#include <odCore/Layer.h>
 #include <odCore/LevelObject.h>
 #include <odCore/Client.h>
 
@@ -28,6 +33,7 @@
 #include <odCore/render/Camera.h>
 
 #include <odCore/physics/PhysicsSystem.h>
+#include <odCore/physics/Handles.h>
 
 namespace dragonRfl
 {
@@ -100,7 +106,61 @@ namespace dragonRfl
 	void TrackingCamera_Cl::onUpdate(float relTime)
 	{
 	    _updateCameraTracking();
+
+	    // the overlay changes slowly, so ten updates per second are enough
+	    mOverlayTimer += relTime;
+	    if(mOverlayTimer >= 0.1f)
+	    {
+	        mOverlayTimer = 0.0f;
+	        _updateDebugOverlay();
+	    }
 	}
+
+    void TrackingCamera_Cl::_updateDebugOverlay()
+    {
+        // without a player to track (e.g. in a cutscene), show where the camera is
+        od::LevelObject *subject = (mObjectToTrack != nullptr) ? mObjectToTrack : &getLevelObject();
+
+        auto &renderer = getClient().getRenderer();
+        glm::vec3 pos = subject->getPosition();
+
+        char text[128];
+        snprintf(text, sizeof(text), "%s %.2f %.2f %.2f", (mObjectToTrack != nullptr) ? "Pos" : "Camera", pos.x, pos.y, pos.z);
+        renderer.setDebugText(1, text);
+
+        // find the terrain below the player
+        std::string layerText = "Layer: none";
+        std::string terrainText;
+        odPhysics::RayTestResult result;
+        if(getClient().getPhysicsSystem().rayTestClosest(pos + glm::vec3(0, 0.1f, 0), pos - glm::vec3(0, 5.0f, 0), odPhysics::PhysicsTypeMasks::Layer,
+                                                          subject->getPhysicsHandle(), result)
+           && result.handle != nullptr && result.handle->asLayerHandle() != nullptr)
+        {
+            od::Layer &layer = result.handle->asLayerHandle()->getLayer();
+            snprintf(text, sizeof(text), "Layer: %s (id %u, height %.2f)", layer.getName().c_str(), static_cast<unsigned>(layer.getId()), result.hitPoint.y);
+            layerText = text;
+            terrainText = layer.describeTriangleAt(glm::vec2(pos.x, pos.z));
+        }
+        renderer.setDebugText(2, layerText);
+        renderer.setDebugText(3, terrainText);
+
+        od::Level *level = getClient().getLevel();
+        std::optional<float> water;
+        if(level != nullptr)
+        {
+            water = level->getWaterSurfaceHeightAt(glm::vec2(pos.x, pos.z), pos.y - 1.0f);
+        }
+
+        if(water.has_value())
+        {
+            snprintf(text, sizeof(text), "Water surface at %.2f (%.2f above the player's origin)", water.value(), water.value() - pos.y);
+            renderer.setDebugText(4, text);
+
+        }else
+        {
+            renderer.setDebugText(4, "");
+        }
+    }
 
 	void TrackingCamera_Cl::onLayerChanged(od::Layer *from, od::Layer *to)
 	{
@@ -211,7 +271,8 @@ namespace dragonRfl
 
         // the listener follows the camera, so sounds are heard from where we are looking (e.g. during cutscenes)
         odAudio::SoundSystem *soundSystem = getClient().getSoundSystem();
-        if(soundSystem != nullptr)
+        auto isFinite = [](const glm::vec3 &v){ return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); };
+        if(soundSystem != nullptr && isFinite(eyepoint) && isFinite(front) && isFinite(up))
         {
             soundSystem->setListenerPosition(eyepoint);
             soundSystem->setListenerOrientation(front, up);

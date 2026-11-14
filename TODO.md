@@ -94,6 +94,15 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
 - Pure OpenGL (or even Vulkan) renderer
     - OSG is a pretty heavy dependency and we only use a small subset of it. A better, pure OpenGL renderer shouldn't be too hard to implement
         
+- Input
+    - Make the keys rebindable. First support a `[keys]` section in `odOsg.cfg`, then add a settings menu.
+    - The original game moves with `E`, `S`, `D`, `F` instead of `W`, `A`, `S`, `D`. Use that as the default layout or as a preset.
+- Camera
+    - Let the player change the distance between the camera and Rynn with the mouse wheel (or with keys).
+      The distance is a constant of 3 units in the tracking camera now.
+- Debug overlay
+    - Shows the frame rate, the player's position, the layer, the cell, the texture and the vertex types below the player.
+      Turn it off with `[debug] overlay = 0` in `odOsg.cfg`. Add a key to toggle it.
 - Cheats and developer console
     - Add cheats for testing: god mode (for Rynn and Arokh), heal to full health, give items, spawn items near the player.
     - Needs an in-game developer console and text rendering (see the GUI section).

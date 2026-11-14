@@ -104,6 +104,7 @@ namespace odOsg
         mSceneRoot->addChild(mLevelRoot);
 
         _setupGuiStuff();
+        _setupDebugOverlay();
     }
 
     Renderer::~Renderer()
@@ -698,6 +699,96 @@ namespace odOsg
         //ss->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
         //ss->setMode(GL_CULL_FACE, osg::StateAttribute::OFF);
         mGuiCamera->addChild(mGuiRoot);
+    }
+
+    void Renderer::_setupDebugOverlay()
+    {
+        mDebugText = new osgText::Text;
+        // the built-in font is very rough. use a common system font if there is one
+        osg::ref_ptr<osgText::Font> font;
+        for(const char *name : { "DejaVuSansMono.ttf", "/usr/share/fonts/TTF/DejaVuSansMono.ttf", "/usr/share/fonts/dejavu/DejaVuSansMono.ttf",
+                                 "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", "LiberationMono-Regular.ttf" })
+        {
+            font = osgText::readRefFontFile(name);
+            if(font.valid())
+            {
+                break;
+            }
+        }
+        mDebugText->setFont(font.valid() ? font : osg::ref_ptr<osgText::Font>(osgText::Font::getDefaultFont()));
+        mDebugText->setCharacterSize(16.0f, 1.0f);
+        mDebugText->setCharacterSizeMode(osgText::Text::SCREEN_COORDS);
+        mDebugText->setAxisAlignment(osgText::Text::XY_PLANE);
+        mDebugText->setAlignment(osgText::Text::LEFT_TOP);
+        mDebugText->setPosition(osg::Vec3(0.008f, 0.99f, 0.0f));
+        mDebugText->setColor(osg::Vec4(1.0f, 1.0f, 0.4f, 1.0f));
+        mDebugText->setBackdropType(osgText::Text::OUTLINE);
+        mDebugText->setBackdropColor(osg::Vec4(0, 0, 0, 1));
+        mDebugText->setDataVariance(osg::Object::DYNAMIC);
+
+        osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+        geode->addDrawable(mDebugText);
+        geode->getOrCreateStateSet()->setMode(GL_DEPTH_TEST, osg::StateAttribute::OFF);
+        geode->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+        // the camera uses a 0..1 space with the origin at the bottom left. character sizes are in pixels
+        mDebugCamera = new osg::Camera;
+        mDebugCamera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+        mDebugCamera->setProjectionMatrix(osg::Matrix::ortho2D(0, 1, 0, 1));
+        mDebugCamera->setViewMatrix(osg::Matrix::identity());
+        mDebugCamera->setClearMask(0);
+        mDebugCamera->setRenderOrder(osg::Camera::POST_RENDER, 10);
+        mDebugCamera->setAllowEventFocus(false);
+        mDebugCamera->addChild(geode);
+
+        struct TextUpdater : public osg::NodeCallback
+        {
+            TextUpdater(Renderer &r) : renderer(r) {}
+            virtual void operator()(osg::Node *node, osg::NodeVisitor *nv) override
+            {
+                {
+                    std::lock_guard<std::mutex> lock(renderer.mDebugTextMutex);
+                    if(renderer.mDebugTextDirty)
+                    {
+                        std::string all;
+                        for(auto &line : renderer.mDebugLines)
+                        {
+                            if(!line.empty()) { all += line; all += "\n"; }
+                        }
+                        renderer.mDebugText->setText(all);
+                        renderer.mDebugTextDirty = false;
+                    }
+                }
+                traverse(node, nv);
+            }
+            Renderer &renderer;
+        };
+        mDebugCamera->setUpdateCallback(new TextUpdater(*this));
+
+        if(mDebugOverlayEnabled)
+        {
+            mSceneRoot->addChild(mDebugCamera);
+        }
+    }
+
+    void Renderer::setDebugText(size_t line, const std::string &text)
+    {
+        if(!mDebugOverlayEnabled)
+        {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(mDebugTextMutex);
+        if(mDebugLines.size() <= line)
+        {
+            mDebugLines.resize(line + 1);
+        }
+
+        if(mDebugLines[line] != text)
+        {
+            mDebugLines[line] = text;
+            mDebugTextDirty = true;
+        }
     }
 
     std::shared_ptr<Model> Renderer::_buildSingleLodModelNode(odDb::Model &model)

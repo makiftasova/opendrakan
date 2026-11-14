@@ -31,6 +31,9 @@ namespace odOsg
         // [input]
         bool grabMouse = true;      ///< Keep the mouse pointer inside the window while it has the focus
 
+        // [debug]
+        bool debugOverlay = true;   ///< Show the debug overlay (frame rate, player position, terrain under the player)
+
         // [audio]
         float masterVolume = 1.0f;  ///< 0.0 (silent) to 1.0 (full volume)
 

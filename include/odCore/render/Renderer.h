@@ -108,6 +108,12 @@ namespace odRender
         virtual Camera *getCamera() = 0;
 
         /**
+         * @brief Sets a line of the debug overlay (position, frame rate etc.). An empty string clears the line.
+         * The default implementation does nothing, so renderers without an overlay need not care.
+         */
+        virtual void setDebugText(size_t line, const std::string &text) { }
+
+        /**
          * @brief Called once right before rendering starts.
          *
          * Use this to start subthreads, preallocate stuff etc. if needed.

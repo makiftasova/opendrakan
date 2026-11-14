@@ -6,6 +6,9 @@
  */
 
 #include <odCore/Layer.h>
+#include <map>
+#include <odCore/db/Texture.h>
+#include <odCore/db/DependencyTable.h>
 
 #include <limits>
 
@@ -299,15 +302,17 @@ namespace od
             else       { corners[0] = a; corners[1] = d; corners[2] = b; }
         }
 
+        // the edges of a body of water have corners of other types. a triangle with a majority of water corners is water
+        size_t waterCorners = 0;
         for(size_t corner : corners)
         {
-            if(corner >= mVertices.size() || mVertices[corner].type != WATER_VERTEX_TYPE)
+            if(corner < mVertices.size() && isWaterVertexType(mVertices[corner].type))
             {
-                return false;
+                ++waterCorners;
             }
         }
 
-        return true;
+        return waterCorners >= 2;
     }
 
     bool Layer::getWaterSurfaceHeightAt(const glm::vec2 &absolutePos, float &height)
@@ -345,6 +350,50 @@ namespace od
 
         height = getAbsoluteHeightAt(absolutePos);
         return !std::isnan(height);
+    }
+
+    std::string Layer::describeTriangleAt(const glm::vec2 &absolutePos)
+    {
+        if(!contains(absolutePos))
+        {
+            return "outside";
+        }
+
+        glm::vec2 relativePos = absolutePos - glm::vec2(mOriginX, mOriginZ);
+        const float epsilon = 0.00001f;
+        if(relativePos.x >= mWidth) relativePos.x = mWidth - epsilon;
+        else if(relativePos.x <= 0) relativePos.x = epsilon;
+        if(relativePos.y >= mHeight) relativePos.y = mHeight - epsilon;
+        else if(relativePos.y <= 0) relativePos.y = epsilon;
+
+        size_t cellX = static_cast<size_t>(relativePos.x);
+        size_t cellZ = static_cast<size_t>(relativePos.y);
+        float fractX = relativePos.x - cellX;
+        float fractZ = relativePos.y - cellZ;
+        size_t cellIndex = cellX + cellZ*mWidth;
+        if(cellIndex >= mCells.size())
+        {
+            return "invalid cell";
+        }
+
+        Cell &cell = mCells[cellIndex];
+        bool isLeft = (cell.flags & OD_LAYER_FLAG_DIV_BACKSLASH) ? (fractX < fractZ) : (1 - fractX > fractZ);
+        const odDb::AssetRef &tex = isLeft ? cell.leftTextureRef : cell.rightTextureRef;
+
+        size_t a = cellIndex + cellZ;
+        size_t b = a + 1;
+        size_t c = a + (mWidth+1);
+        size_t d = c + 1;
+
+        std::string text = "cell " + std::to_string(cellX) + "," + std::to_string(cellZ) + " tex " + std::to_string(tex.dbIndex) + "/" + std::to_string(tex.assetId)
+                         + " vertex types " + std::to_string(mVertices[a].type) + " " + std::to_string(mVertices[b].type) + " "
+                         + std::to_string(mVertices[c].type) + " " + std::to_string(mVertices[d].type);
+        if(isWaterTriangle(cellIndex, isLeft))
+        {
+            text += " [water]";
+        }
+
+        return text;
     }
 
     bool Layer::contains(const glm::vec2 &xzCoord)

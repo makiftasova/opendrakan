@@ -32,7 +32,7 @@ target_sources(odOsg PRIVATE
 # the RFL registers its classes statically, so the whole archive has to be linked
 target_link_libraries(odOsg PRIVATE odCore "$<LINK_LIBRARY:WHOLE_ARCHIVE,dragonRfl>")
 
-find_package(OpenSceneGraph 3.4.0 REQUIRED osgDB osgViewer osgGA osgUtil)
+find_package(OpenSceneGraph 3.4.0 REQUIRED osgDB osgViewer osgGA osgUtil osgText)
 target_link_libraries(odOsg PRIVATE ${OPENSCENEGRAPH_LIBRARIES})
 target_include_directories(odOsg PRIVATE ${OPENSCENEGRAPH_INCLUDE_DIRS})
 

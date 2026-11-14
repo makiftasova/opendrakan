@@ -271,6 +271,7 @@ int main(int argc, char **argv)
     // command line options take precedence over the config file
     osgRenderer.setHorizontalFov(horizontalFov > 0 ? horizontalFov : settings.horizontalFov);
     osgRenderer.setGrabMouse(settings.grabMouse && !disableMouseGrab);
+    osgRenderer.setDebugOverlayEnabled(settings.debugOverlay);
     osgRenderer.setWindowConfig(settings.windowWidth, settings.windowHeight, settings.fullscreen, settings.screen);
     soundSystem.setMasterVolume(settings.masterVolume);
 

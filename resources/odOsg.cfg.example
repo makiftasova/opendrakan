@@ -20,3 +20,7 @@ grab_mouse = 1
 [audio]
 # Master volume, 0.0 (silent) to 1.0 (full)
 master_volume = 1.0
+
+[debug]
+# Show frame rate, player position and the terrain under the player
+overlay = 1

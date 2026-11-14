@@ -70,6 +70,7 @@ namespace dragonRfl
         void _mouseHandler(const glm::vec2 &pos);
         void _updateCameraTracking();
         void _updateCameraViewMatrix();
+        void _updateDebugOverlay();
         void _setupCameraModel();
 
 		TrackingCameraFields mFields;
@@ -77,6 +78,7 @@ namespace dragonRfl
         od::LevelObject *mObjectToTrack;
 
         bool mIsTracking;
+        float mOverlayTimer = 0.0f;
 
         std::shared_ptr<odInput::InputListener> mInputListener;
 

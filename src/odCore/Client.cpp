@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <algorithm>
 
 #include <odCore/Level.h>
@@ -231,6 +232,8 @@ namespace od
         double jitterEma = 0.01;
 
         double clientTime = 0;
+        double fpsTime = 0.0;
+        int fpsFrames = 0;
         auto lastUpdateStartTime = std::chrono::high_resolution_clock::now();
         while(!mIsDone.load(std::memory_order_relaxed))
         {
@@ -239,6 +242,19 @@ namespace od
             lastUpdateStartTime = loopStart;
 
             clientTime += relTime;
+
+            // frame rate for the debug overlay, updated twice a second
+            fpsTime += relTime;
+            ++fpsFrames;
+            if(fpsTime >= 0.5)
+            {
+                char text[64];
+                snprintf(text, sizeof(text), "FPS %.0f (%.1f ms)", fpsFrames/fpsTime, 1000.0*fpsTime/fpsFrames);
+                mRenderer.setDebugText(0, text);
+                fpsTime = 0.0;
+                fpsFrames = 0;
+            }
+
             if(mEventQueue != nullptr)
             {
                 mEventQueue->setCurrentTime(clientTime);

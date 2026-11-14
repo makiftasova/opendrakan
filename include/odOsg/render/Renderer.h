@@ -14,6 +14,11 @@
 #include <osg/Group>
 #include <osg/Uniform>
 #include <osgViewer/Viewer>
+#include <osgText/Text>
+
+#include <mutex>
+#include <string>
+#include <vector>
 
 #include <odCore/BoundingSphere.h>
 
@@ -67,6 +72,8 @@ namespace odOsg
         virtual glm::vec2 getFramebufferDimensions() override;
 
         virtual odRender::Camera *getCamera() override;
+        virtual void setDebugText(size_t line, const std::string &text) override;
+        inline void setDebugOverlayEnabled(bool enabled) { mDebugOverlayEnabled = enabled; }
 
         virtual void setup() override;
         virtual void shutdown() override;
@@ -139,6 +146,15 @@ namespace odOsg
         osg::ref_ptr<osg::Group> mLevelRoot;
 
         osg::ref_ptr<osg::Camera> mGuiCamera;
+
+        // debug overlay. the text is only changed in an update callback, so it never races with the draw thread
+        void _setupDebugOverlay();
+        osg::ref_ptr<osg::Camera> mDebugCamera;
+        osg::ref_ptr<osgText::Text> mDebugText;
+        std::mutex mDebugTextMutex;
+        std::vector<std::string> mDebugLines;
+        bool mDebugTextDirty = false;
+        bool mDebugOverlayEnabled = true;
         osg::ref_ptr<osg::Group> mGuiRoot;
         osg::Matrix mNdcToGuiSpaceTransform;
 

@@ -35,6 +35,8 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
       Applying it literally to our matrices put the spears upside down. The conventions of our matrices differ from the description.
       To fix this, compare the same cutscene moment across variants (the cutscene timing differs between runs).
       The animated chain matrix already holds the hand's position, and the current code adds the bind matrix on top. That is probably the offset.
+    - The descriptions disagree on the default transition time: 0.9 seconds in `doc/animation_behaviour.md`, 0.2 seconds in
+      `doc/animation_channels_behaviour.md`. Find out which one is right (maybe 0.2 is for gameplay and 0.9 for sequences).
     - Animations should follow the channel tree and its propagation flag (`doc/animation_channels_behaviour.md`).
       Currently they start on the whole joint subtree. Not implemented yet.
     - Transitions between animations should blend with the original curve (the sword jumps now).
@@ -43,9 +45,8 @@ Feel free to pick an item and open a ticket for it should you wish to work on a 
     - Movements of skeleton need to apply to bounding data
     - ~~Needs support for multiple interpolation styles (mostly "no interpolation" for authentic Drakan animations)~~
 - Clean-room documents
-    - `doc/animation_behaviour.md` is marked DIRTY by the strict leak review (about 40 lines with layout notation, code-like
-      fragments and names). It is already in the pushed history. Have the examiner rewrite it, review it again and replace the file.
-      This means rewriting history and force-pushing the fork. Ask before doing that.
+    - `doc/animation_behaviour.md` was marked DIRTY by the strict leak review. A cleaned version replaced it (reviewed CLEAN).
+      The dirty version is still in the pushed history. Removing it means rewriting history and force-pushing the fork. Ask before doing that.
     - Both examiner and reviewer must follow `doc/clean_room_process.md`. The examiner must not read the re-implementation.
 - STOMP sequences
     - Cutscenes play, including sounds, music, attachments and skipping.

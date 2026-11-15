@@ -26,7 +26,7 @@ The file may contain only:
 
 Mathematical-style pseudo-code is fine when all of these are true:
 
-- It uses ASCII only and standard mathematical functions (`floor`, `ceil`, `abs`, `min`, `max`, `sqrt`, `sin`, `cos`, `sum`).
+- It uses ASCII only and standard mathematical functions (`floor`, `ceil`, `abs`, `min`, `max`, `sqrt`, `exp`, `log`, `pow`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `sum`, `product`).
 - The file defines its symbols in plain English, and the symbols are descriptive names, not names that look taken from a program.
 - It defines quantities as formulas of inputs (`=`, `:=`) or states a case distinction on values (`if ... then ... else`).
 - Indexed quantities are mathematical sequences, vectors or matrices that the file defines.

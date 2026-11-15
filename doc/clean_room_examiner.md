@@ -41,8 +41,8 @@ Don't guess silently. If you couldn't answer a question, say so.
 A short formula or a few numbered formulas often say more than a paragraph of prose. You may use
 [mathematical-style pseudo-code](https://en.wikipedia.org/wiki/Pseudocode#Mathematical_style_pseudocode) under these rules:
 
-- Use ASCII only. Write `>=`, `<=`, `!=`, `floor(x)`, `ceil(x)`, `abs(x)`, `min(a, b)`, `max(a, b)`, `sqrt(x)`, `sin(x)`, `cos(x)`
-  and `sum(...)`.
+- Use ASCII only. Write `>=`, `<=`, `!=`, `floor(x)`, `ceil(x)`, `abs(x)`, `min(a, b)`, `max(a, b)`, `sqrt(x)`, `exp(x)`, `log(x)`, `pow(x, y)`, the trigonometric functions `sin(x)`,
+  `cos(x)`, `tan(x)`, `asin(x)`, `acos(x)`, `atan(x)`, `atan2(y, x)` and `sum(...)`, `product(...)`.
 - Define every symbol in plain English before you use it. Choose short, descriptive symbols of your own, such as `speed`,
   `pitch` or `t_next`. Never use names that you saw in the program.
 - Describe results as functions of inputs: `v_new = v_old + accel * dt`. Use `=` to define a quantity and `:=` to update one.
